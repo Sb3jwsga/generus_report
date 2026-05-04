@@ -1,5 +1,5 @@
-import React from 'react';
-import logoUrl from '../assets/logo_ppg.png';
+import React, { useState } from 'react';
+import { Shield } from 'lucide-react';
 
 interface LogoProps {
   className?: string;
@@ -7,14 +7,26 @@ interface LogoProps {
 }
 
 export default function Logo({ className = "", size = 40 }: LogoProps) {
+  const [hasError, setHasError] = useState(false);
+
   return (
-    <div className={`relative flex items-center justify-center overflow-hidden ${className}`} style={{ width: size, height: size }}>
-      <img 
-        src={logoUrl} 
-        alt="PPG Logo" 
-        className="block w-full h-full object-contain"
-        referrerPolicy="no-referrer"
-      />
+    <div className={`flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+      {hasError ? (
+        <div 
+          className="flex items-center justify-center bg-brand-primary/10 rounded-xl"
+          style={{ width: size, height: size }}
+        >
+          <Shield size={size * 0.6} className="text-brand-primary" />
+        </div>
+      ) : (
+        <img 
+          src="/logo_ppg.png" 
+          alt="Logo" 
+          className="max-w-full max-h-full object-contain"
+          loading="eager"
+          onError={() => setHasError(true)}
+        />
+      )}
     </div>
   );
 }
