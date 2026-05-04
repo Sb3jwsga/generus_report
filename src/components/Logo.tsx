@@ -1,4 +1,5 @@
 import React from 'react';
+import logoUrl from '../assets/logo_ppg.png';
 
 interface LogoProps {
   className?: string;
@@ -9,7 +10,7 @@ export default function Logo({ className = "", size = 40 }: LogoProps) {
   return (
     <div className={`relative flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
       <img 
-        src="/logo_ppg.png" 
+        src={logoUrl} 
         alt="PPG Logo" 
         className="w-full h-full object-contain"
       />
