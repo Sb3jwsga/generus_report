@@ -14,6 +14,7 @@ interface DataContextType {
   kelompok: Kelompok[];
   materi: Materi[];
   loading: boolean;
+  error: string | null;
   refreshData: (silent?: boolean) => Promise<void>;
 }
 
@@ -30,17 +31,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     desa: [],
     kelompok: [],
     materi: [],
-    loading: true
+    loading: true,
+    error: null as string | null
   });
 
   const loadData = async (silent: boolean = false) => {
     if (!silent) {
-      setData(prev => ({ ...prev, loading: true }));
+      setData(prev => ({ ...prev, loading: true, error: null }));
     }
     try {
-      // Increased timeout to 30s for slow Apps Script environments
-      const result = await clampedTask(fetchAllData(), 1500, 30000);
-      if (result) {
+      // Reduced minMs to 500ms for faster feel, kept 45s max for slow Apps Script
+      const result = await clampedTask(fetchAllData(), 500, 45000);
+      if (result && result.status === 'success') {
         console.log("Data loaded successfully:", result);
         setData({
           santri: result.santri || [],
@@ -52,19 +54,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           desa: result.desa || [],
           kelompok: result.kelompok || [],
           materi: result.materi || [],
-          loading: false
+          loading: false,
+          error: null
         });
       } else {
-        console.warn("fetchAllData returned null. Apps Script might be unreachable.");
-        setData(prev => ({ ...prev, loading: false }));
+        const errorMsg = result?.message || "Apps Script returned an unsuccessful status or is unreachable.";
+        console.warn("fetchAllData failed:", errorMsg);
+        setData(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: errorMsg 
+        }));
       }
     } catch (error) {
-      if (error instanceof Error && error.message === 'TIMEOUT') {
-        console.warn("Data fetching timed out after 30 seconds.");
-      } else {
-        console.error("Failed to load data:", error);
+      let message = "Gagal memuat data dari database.";
+      if (error instanceof Error) {
+        if (error.message === 'TIMEOUT') {
+          message = "Koneksi ke database terlalu lama (Timeout). Pastikan Apps Script sudah di-deploy dengan benar.";
+        } else {
+          message = `Error: ${error.message}`;
+        }
       }
-      setData(prev => ({ ...prev, loading: false }));
+      console.error("Failed to load data:", error);
+      setData(prev => ({ ...prev, loading: false, error: message }));
     }
   };
 

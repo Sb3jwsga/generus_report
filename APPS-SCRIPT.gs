@@ -4,13 +4,23 @@
  * Pastikan nama sheet sesuai dengan yang ada di kode ini (santri, rombel, desa, kelompok, materi, laporan)
  */
 
-const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
+// Paste your Spreadsheet ID here if the script is NOT bound to a spreadsheet
+const FALLBACK_SPREADSHEET_ID = ''; 
+
+function getSpreadsheetId() {
+  try {
+    return SpreadsheetApp.getActiveSpreadsheet().getId();
+  } catch (e) {
+    if (FALLBACK_SPREADSHEET_ID) return FALLBACK_SPREADSHEET_ID;
+    throw new Error('Spreadsheet tidak ditemukan. Hubungkan script ke spreadsheet atau isi FALLBACK_SPREADSHEET_ID.');
+  }
+}
 
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
     
     let result = { status: 'error', message: 'Action not found' };
 

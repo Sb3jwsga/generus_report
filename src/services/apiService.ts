@@ -1,7 +1,7 @@
 import { Laporan, LaporanKeterangan, Santri } from '../types';
 
 // Paste your Apps Script Web App URL here
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2AoBk_iZpOvXCZe1J1INPSAS_pupjmFoWFJWGHP93csp7NArK9EOYsH_YowV6HHsf/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyVWO8R_AFvIEMTRPCNLoFBBVLHtDczUsNoNB-m71ab9n8JDvSYuLDFj6smvMFCb6E2/exec';
 
 async function safeJson(response: Response) {
   const text = await response.text();
@@ -25,12 +25,17 @@ export async function fetchAllData() {
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'fetchAllData' })
     });
+    
+    if (!response.ok) {
+       return { status: 'error', message: `HTTP Error ${response.status}: ${response.statusText}` };
+    }
+
     const result = await safeJson(response);
-    console.log('Fetched data result:', result);
+    if (!result) return { status: 'error', message: 'Server returned empty response' };
     return result;
   } catch (error) {
     console.error('Error fetching data:', error);
-    return null;
+    return { status: 'error', message: error instanceof Error ? error.message : String(error) };
   }
 }
 

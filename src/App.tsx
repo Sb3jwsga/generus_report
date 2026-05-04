@@ -12,10 +12,10 @@ import Logo from './components/Logo';
 import { Santri, User } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from './contexts/DataContext';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, RefreshCw, AlertCircle } from 'lucide-react';
 
 export default function App() {
-  const { loading: dataLoading } = useData();
+  const { loading: dataLoading, error: dataError, refreshData } = useData();
   const [activeTab, setActiveTab] = React.useState('santri');
   const [selectedSantri, setSelectedSantri] = React.useState<Santri | null>(null);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
@@ -93,6 +93,30 @@ export default function App() {
             </div>
             <h2 className="text-2xl font-serif text-brand-primary mb-2">Memuat Data</h2>
             <p className="text-gray-500 text-sm max-w-xs mx-auto animate-pulse">Menghubungkan ke Database...</p>
+          </motion.div>
+        )}
+
+        {dataError && !dataLoading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-[100] bg-brand-bg flex flex-col items-center justify-center p-6 text-center"
+          >
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+              <AlertCircle size={40} />
+            </div>
+            <h2 className="text-2xl font-serif text-brand-primary mb-2">Gagal Menghubungkan</h2>
+            <p className="text-gray-500 text-sm max-w-md mx-auto mb-8">
+              {dataError}. <br/>
+              Pastikan Apps Script sudah di-deploy sebagai Web App dengan akses "Anyone".
+            </p>
+            <button 
+              onClick={() => refreshData()}
+              className="px-8 py-4 bg-brand-primary text-white rounded-2xl font-bold flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-brand-primary/20"
+            >
+              <RefreshCw size={20} />
+              Coba Lagi
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
