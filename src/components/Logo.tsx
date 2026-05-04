@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import logoUrl from '../assets/logo_ppg.png';
 
 interface LogoProps {
   className?: string;
@@ -25,7 +24,7 @@ export default function Logo({ className = "", size = 40 }: LogoProps) {
         </div>
       ) : (
         <img 
-          src={logoUrl} 
+          src="/logo_ppg.png" 
           alt="PPG" 
           className="relative z-10 w-full h-full object-contain transition-opacity duration-300"
           onLoad={(e) => (e.currentTarget.style.opacity = '1')}
