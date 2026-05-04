@@ -21,13 +21,21 @@ export default function SantriList({ onSelectSantri, currentUser }: SantriListPr
   const getDesaName = (id: string) => allDesa.find(d => d.id_desa === id)?.nama_desa || '-';
   const getKelompokName = (id: string) => allKelompok.find(k => k.id_kelompok === id)?.nama_kelompok || '-';
 
-  const filteredSantri = allSantri.filter(s => {
-    const matchesSearch = s.nama_santri.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDesa = selectedDesa ? s.id_desa === selectedDesa : true;
-    const matchesKelompok = selectedKelompok ? s.id_kelompok === selectedKelompok : true;
-    const matchesRombel = selectedRombel ? s.id_rombel === selectedRombel : true;
-    return matchesSearch && matchesDesa && matchesKelompok && matchesRombel;
-  });
+  const filteredSantri = allSantri
+    .filter(s => {
+      const matchesSearch = s.nama_santri.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDesa = selectedDesa ? s.id_desa === selectedDesa : true;
+      const matchesKelompok = selectedKelompok ? s.id_kelompok === selectedKelompok : true;
+      const matchesRombel = selectedRombel ? s.id_rombel === selectedRombel : true;
+      return matchesSearch && matchesDesa && matchesKelompok && matchesRombel;
+    })
+    .sort((a, b) => a.nama_santri.localeCompare(b.nama_santri));
+
+  const stats = {
+    total: filteredSantri.length,
+    male: filteredSantri.filter(s => s.jenis_kelamin === 'L').length,
+    female: filteredSantri.filter(s => s.jenis_kelamin === 'P').length,
+  };
 
   return (
     <div className="space-y-8" id="santri-list">
@@ -48,6 +56,53 @@ export default function SantriList({ onSelectSantri, currentUser }: SantriListPr
           />
         </div>
       </header>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-6 rounded-[32px] border border-brand-accent/50 shadow-sm flex items-center gap-6"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-brand-primary/5 flex items-center justify-center shrink-0">
+            <Users className="text-brand-primary" size={24} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Generus</p>
+            <h3 className="text-2xl font-serif text-brand-primary leading-none">{stats.total}</h3>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white p-6 rounded-[32px] border border-brand-accent/50 shadow-sm flex items-center gap-6"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+            <UserIcon className="text-blue-500" size={24} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Laki-Laki</p>
+            <h3 className="text-2xl font-serif text-brand-primary leading-none">{stats.male}</h3>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white p-6 rounded-[32px] border border-brand-accent/50 shadow-sm flex items-center gap-6"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-pink-50 flex items-center justify-center shrink-0">
+            <UserIcon className="text-pink-500" size={24} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Perempuan</p>
+            <h3 className="text-2xl font-serif text-brand-primary leading-none">{stats.female}</h3>
+          </div>
+        </motion.div>
+      </div>
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-3xl border border-brand-accent/50 shadow-sm flex flex-wrap gap-4 items-center">

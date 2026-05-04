@@ -274,12 +274,14 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
 
   const selectedRombel = allRombel.find(r => r.id_rombel === selectedRombelId);
   const targetsInRombel = allTargets.filter(t => t.id_rombel === selectedRombelId);
-  const santriInRombel = allSantri.filter(s => {
-    const matchesRombel = s.id_rombel === selectedRombelId;
-    const matchesKelompok = currentUser?.role === 'pengurus' ? s.id_kelompok === currentUser.id_kelompok : true;
-    const matchesSearch = s.nama_santri.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesRombel && matchesKelompok && matchesSearch;
-  });
+  const santriInRombel = allSantri
+    .filter(s => {
+      const matchesRombel = s.id_rombel === selectedRombelId;
+      const matchesKelompok = currentUser?.role === 'pengurus' ? s.id_kelompok === currentUser.id_kelompok : true;
+      const matchesSearch = s.nama_santri.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesRombel && matchesKelompok && matchesSearch;
+    })
+    .sort((a, b) => a.nama_santri.localeCompare(b.nama_santri));
 
   // Aggregate reports by date and santri for "Hasil Laporan"
   const aggregatedReports = React.useMemo(() => {

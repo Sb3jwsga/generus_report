@@ -55,9 +55,11 @@ export default function ManageSantriPage({ currentUser }: ManageSantriPageProps)
     }
   }, [allRombel, allDesa, allKelompok, currentUser]);
 
-  const filteredSantri = santris.filter(s => 
-    s.nama_santri.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSantri = santris
+    .filter(s => 
+      s.nama_santri.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.nama_santri.localeCompare(b.nama_santri));
 
   const handleAdd = () => {
     const defaultDesaId = currentUser?.role === 'admin' ? (allDesa[0]?.id_desa || '') : (currentUser?.id_desa || '');
