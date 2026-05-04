@@ -52,7 +52,7 @@ export default function SantriDetail({ santri, onBack }: SantriDetailProps) {
         <div className="lg:col-span-2 space-y-8">
            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-brand-accent/30">
               <div className="flex items-center justify-between mb-8">
-                <h4 className="text-xl font-serif font-bold text-brand-primary">Profil Santri</h4>
+                <h4 className="text-xl font-serif font-bold text-brand-primary">Profil Generus</h4>
               </div>
               <div className="grid grid-cols-2 gap-8">
                 <div>

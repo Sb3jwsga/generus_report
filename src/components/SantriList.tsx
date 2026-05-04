@@ -179,7 +179,7 @@ export default function SantriList({ onSelectSantri, currentUser }: SantriListPr
             <thead>
               <tr className="bg-brand-bg/50">
                 <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">No</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nama Santri</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nama Generus</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rombel</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kelompok</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Desa</th>
