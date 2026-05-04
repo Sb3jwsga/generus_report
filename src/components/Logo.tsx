@@ -8,11 +8,12 @@ interface LogoProps {
 
 export default function Logo({ className = "", size = 40 }: LogoProps) {
   return (
-    <div className={`relative flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+    <div className={`relative flex items-center justify-center overflow-hidden ${className}`} style={{ width: size, height: size }}>
       <img 
         src={logoUrl} 
         alt="PPG Logo" 
-        className="w-full h-full object-contain"
+        className="block w-full h-full object-contain"
+        referrerPolicy="no-referrer"
       />
     </div>
   );
