@@ -13,11 +13,18 @@ interface LaporanPageProps {
 export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: LaporanPageProps) {
   const { santri: allSantri, laporan: allLaporan, targets: allTargets, rombel: allRombel, desa: allDesa, kelompok: allKelompok, keterangan: allKeterangan, laporanKeterangan: allLaporanKeterangan } = useData();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDesa, setSelectedDesa] = useState('');
-  const [selectedKelompok, setSelectedKelompok] = useState('');
+  const [selectedDesa, setSelectedDesa] = useState(currentUser?.role === 'pengurus' ? currentUser.id_desa : '');
+  const [selectedKelompok, setSelectedKelompok] = useState(currentUser?.role === 'pengurus' ? currentUser.id_kelompok : '');
   const [selectedRombel, setSelectedRombel] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
+
+  React.useEffect(() => {
+    if (isLoggedIn && currentUser?.role === 'pengurus') {
+      setSelectedDesa(currentUser.id_desa);
+      setSelectedKelompok(currentUser.id_kelompok);
+    }
+  }, [isLoggedIn, currentUser]);
 
   const months = [
     { value: '01', label: 'Januari' },
@@ -40,20 +47,26 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
       .filter((y): y is string => !!y)
   )).sort((a: string, b: string) => b.localeCompare(a));
 
-  // If user is pengurus, restrict to their kelompok
+  // If user is pengurus, restrict to their area
+  const effectiveDesa = (isLoggedIn && currentUser?.role === 'pengurus') ? currentUser.id_desa : selectedDesa;
   const effectiveKelompok = (isLoggedIn && currentUser?.role === 'pengurus') ? currentUser.id_kelompok : selectedKelompok;
 
   // Grouping logic for table
   const filteredSantri = allSantri.filter(s => {
     const matchesSearch = s.nama_santri.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDesa = selectedDesa ? s.id_desa === selectedDesa : true;
+    const matchesDesa = effectiveDesa ? s.id_desa === effectiveDesa : true;
     const matchesKelompok = effectiveKelompok ? s.id_kelompok === effectiveKelompok : true;
     const matchesRombel = selectedRombel ? s.id_rombel === selectedRombel : true;
     return matchesSearch && matchesDesa && matchesKelompok && matchesRombel;
   });
 
   // Filtered reports for statistics
+  const filteredSantriIds = new Set(filteredSantri.map(s => s.id_santri));
+  
   const filteredLaporan = allLaporan.filter(l => {
+    const matchesSantri = filteredSantriIds.has(l.id_santri);
+    if (!matchesSantri) return false;
+
     if (selectedYear || selectedMonth) {
       const [year, month] = (l.tanggal_laporan || '').split('-');
       const matchesYear = selectedYear ? year === selectedYear : true;
@@ -79,11 +92,14 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
     ? Math.round((filteredLaporan.reduce((acc, curr) => acc + (curr.pencapaian_target / curr.angka_target), 0) / filteredLaporan.length) * 100)
     : 0;
 
-  // Most frequent note category
-  const categoryCounts = allLaporanKeterangan.reduce((acc, curr) => {
-    acc[curr.id_keterangan] = (acc[curr.id_keterangan] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  // Most frequent note category among filtered reports
+  const filteredLaporanIds = new Set(filteredLaporan.map(l => l.id_laporan));
+  const categoryCounts = allLaporanKeterangan
+    .filter(lk => filteredLaporanIds.has(lk.id_laporan))
+    .reduce((acc, curr) => {
+      acc[curr.id_keterangan] = (acc[curr.id_keterangan] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
   const mostFrequentCategoryId = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a])[0];
   const mostFrequentCategory = allKeterangan.find(k => k.id_keterangan === mostFrequentCategoryId)?.jenis_keterangan || '-';
 
@@ -166,9 +182,10 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Desa</span>
                 </div>
                 <select 
-                  value={selectedDesa}
+                  value={effectiveDesa}
                   onChange={(e) => setSelectedDesa(e.target.value)}
-                  className="w-full bg-brand-bg/50 border border-brand-accent/50 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-primary/10 appearance-none"
+                  disabled={isLoggedIn && currentUser?.role === 'pengurus'}
+                  className="w-full bg-brand-bg/50 border border-brand-accent/50 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-primary/10 appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Semua Desa</option>
                   {allDesa.map(d => <option key={d.id_desa} value={d.id_desa}>{d.nama_desa}</option>)}
@@ -181,9 +198,10 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Kelompok</span>
                 </div>
                 <select 
-                  value={selectedKelompok}
+                  value={effectiveKelompok}
                   onChange={(e) => setSelectedKelompok(e.target.value)}
-                  className="w-full bg-brand-bg/50 border border-brand-accent/50 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-primary/10 appearance-none"
+                  disabled={isLoggedIn && currentUser?.role === 'pengurus'}
+                  className="w-full bg-brand-bg/50 border border-brand-accent/50 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-primary/10 appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Semua Kelompok</option>
                   {allKelompok.map(k => <option key={k.id_kelompok} value={k.id_kelompok}>{k.nama_kelompok}</option>)}
@@ -207,8 +225,10 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
 
               <button 
                 onClick={() => { 
-                  setSelectedDesa(''); 
-                  setSelectedKelompok(''); 
+                  if (!(isLoggedIn && currentUser?.role === 'pengurus')) {
+                    setSelectedDesa(''); 
+                    setSelectedKelompok(''); 
+                  }
                   setSelectedRombel(''); 
                   setSearchTerm(''); 
                   setSelectedMonth('');
