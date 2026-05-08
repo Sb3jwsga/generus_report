@@ -66,7 +66,6 @@ export default function Navbar({ activeTab, setActiveTab, isLoggedIn, onLogout, 
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="text-right">
                     <p className="text-[10px] sm:text-xs font-bold text-brand-primary truncate max-w-[80px] sm:max-w-none">{user.nama_user}</p>
-                    <p className="text-[8px] sm:text-[10px] text-gray-400 capitalize">{user.role}</p>
                   </div>
                   <button 
                     onClick={onLogout}
