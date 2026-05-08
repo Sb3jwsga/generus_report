@@ -47,7 +47,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <div className="mb-6 flex justify-center">
             <Logo size={80} />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-brand-primary mb-2">Portal Pengajar</h2>
+          <h2 className="text-3xl font-serif font-bold text-brand-primary mb-2">Assalamu'alaikum</h2>
           <p className="text-gray-500 text-sm">Masuk untuk mengelola data dan laporan generus.</p>
         </div>
 
