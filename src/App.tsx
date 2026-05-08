@@ -92,7 +92,7 @@ export default function App() {
               <Logo size={80} className="animate-pulse" />
             </div>
             <h2 className="text-2xl font-serif text-brand-primary mb-2">Memuat Data</h2>
-            <p className="text-gray-500 text-sm max-w-xs mx-auto animate-pulse">Menghubungkan ke Database...</p>
+            <p className="text-gray-500 text-sm max-w-xs mx-auto animate-pulse">Amal Sholih Ditunggu...</p>
           </motion.div>
         )}
 
@@ -108,7 +108,7 @@ export default function App() {
             <h2 className="text-2xl font-serif text-brand-primary mb-2">Gagal Menghubungkan</h2>
             <p className="text-gray-500 text-sm max-w-md mx-auto mb-8">
               {dataError}. <br/>
-              Pastikan Apps Script sudah di-deploy sebagai Web App dengan akses "Anyone".
+              Pastikan Koneksi Jaringan Stabil
             </p>
             <button 
               onClick={() => refreshData()}
