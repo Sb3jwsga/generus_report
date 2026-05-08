@@ -209,7 +209,7 @@ export default function ManageSantriPage({ currentUser }: ManageSantriPageProps)
             className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white rounded-xl font-medium hover:opacity-90 transition-all"
           >
             <UserPlus size={18} />
-            Tambah Santri
+            Tambah Generus
           </button>
         </div>
       </header>
@@ -279,7 +279,7 @@ export default function ManageSantriPage({ currentUser }: ManageSantriPageProps)
             >
               <div className="p-8 border-b border-brand-accent/30 flex items-center justify-between">
                 <h3 className="text-2xl font-serif font-bold text-brand-primary">
-                  {editingSantri ? 'Ubah Data Santri' : 'Tambah Santri Baru'}
+                  {editingSantri ? 'Ubah Data Santri' : 'Tambah Generus Baru'}
                 </h3>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-brand-bg rounded-xl text-gray-400 transition-colors">
                    <X size={20} />
