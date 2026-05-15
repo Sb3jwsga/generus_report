@@ -140,7 +140,7 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {[
           { label: 'Total Generus', value: totalSantriStats, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Generus Lapor', value: santriWithReportsCount, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Total Generus Sudah Lapor', value: santriWithReportsCount, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Rata Kehadiran', value: `${attendancePercentage}%`, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Rata Capaian', value: `${achievementPercentage}%`, icon: TargetIcon, color: 'text-orange-600', bg: 'bg-orange-50' },
           { label: 'Catatan Terbanyak', value: mostFrequentCategory, icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-50' },
