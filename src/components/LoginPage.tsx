@@ -47,7 +47,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <div className="mb-6 flex justify-center">
             <Logo size={80} />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-brand-primary mb-2">Assalamu'alaikum</h2>
+          <h2 className="text-3xl font-serif font-bold text-brand-primary mb-2">Portal Pengajar</h2>
           <p className="text-gray-500 text-sm">Masuk untuk mengelola data dan laporan generus.</p>
         </div>
 
@@ -95,6 +95,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                <input type="checkbox" id="remember" className="w-4 h-4 rounded border-brand-accent text-brand-primary focus:ring-brand-primary" />
                <label htmlFor="remember" className="text-xs text-gray-500 cursor-pointer">Ingat saya</label>
              </div>
+             <a href="#" className="text-xs font-bold text-brand-primary hover:underline">Lupa sandi?</a>
           </div>
 
           {error && (

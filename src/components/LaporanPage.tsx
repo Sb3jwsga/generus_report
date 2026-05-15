@@ -16,8 +16,12 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
   const [selectedDesa, setSelectedDesa] = useState(currentUser?.role === 'pengurus' ? currentUser.id_desa : '');
   const [selectedKelompok, setSelectedKelompok] = useState(currentUser?.role === 'pengurus' ? currentUser.id_kelompok : '');
   const [selectedRombel, setSelectedRombel] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const today = new Date();
+  const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+  const currentYear = String(today.getFullYear());
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   React.useEffect(() => {
     if (isLoggedIn && currentUser?.role === 'pengurus') {
@@ -41,11 +45,12 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
     { value: '12', label: 'Desember' },
   ];
 
-  const availableYears = Array.from(new Set(
-    allLaporan
+  const availableYears = Array.from(new Set([
+    currentYear,
+    ...allLaporan
       .map(l => l.tanggal_laporan?.split('-')[0])
       .filter((y): y is string => !!y)
-  )).sort((a: string, b: string) => b.localeCompare(a));
+  ])).sort((a: string, b: string) => b.localeCompare(a));
 
   // If user is pengurus, restrict to their area
   const effectiveDesa = (isLoggedIn && currentUser?.role === 'pengurus') ? currentUser.id_desa : selectedDesa;
@@ -78,6 +83,7 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
 
   // Statistics
   const totalSantriStats = filteredSantri.length;
+  const santriWithReportsCount = new Set(filteredLaporan.map(l => l.id_santri)).size;
 
   // Attendance stats
   const totalHadir = filteredLaporan.reduce((acc, curr) => acc + (curr.hadir || 0), 0);
@@ -131,9 +137,10 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
         </div>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {[
           { label: 'Total Generus', value: totalSantriStats, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Generus Lapor', value: santriWithReportsCount, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Rata Kehadiran', value: `${attendancePercentage}%`, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Rata Capaian', value: `${achievementPercentage}%`, icon: TargetIcon, color: 'text-orange-600', bg: 'bg-orange-50' },
           { label: 'Catatan Terbanyak', value: mostFrequentCategory, icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -231,8 +238,8 @@ export default function LaporanPage({ isLoggedIn, onGoToLogin, currentUser }: La
                   }
                   setSelectedRombel(''); 
                   setSearchTerm(''); 
-                  setSelectedMonth('');
-                  setSelectedYear('');
+                  setSelectedMonth(currentMonth);
+                  setSelectedYear(currentYear);
                 }}
                 className="px-4 py-2 text-[10px] font-bold text-gray-400 hover:text-brand-primary transition-colors uppercase tracking-widest bg-brand-bg/50 rounded-xl border border-brand-accent/50"
               >
