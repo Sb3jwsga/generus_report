@@ -291,6 +291,9 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
       const santri = allSantri.find(s => s.id_santri === report.id_santri);
       if (!santri || santri.id_rombel !== selectedRombelId) return;
       
+      const matchesKelompok = currentUser?.role === 'pengurus' ? santri.id_kelompok === currentUser.id_kelompok : true;
+      if (!matchesKelompok) return;
+      
       const date = report.tanggal_laporan;
       const santriId = report.id_santri;
       const key = `${date}-${santriId}`;
@@ -320,7 +323,7 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
         return matchesSearch && matchesDate;
       })
       .sort((a, b) => b.tanggal_laporan.localeCompare(a.tanggal_laporan));
-  }, [selectedRombelId, searchQueryResults, startDate, endDate]);
+  }, [allLaporan, allSantri, selectedRombelId, searchQueryResults, startDate, endDate, currentUser]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-32 relative">
