@@ -30,8 +30,13 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
   const [reportDate, setReportDate] = useState(getLocalDateString());
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryResults, setSearchQueryResults] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  
+  const today = new Date();
+  const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+  const currentYear = String(today.getFullYear());
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   
   // State for batch inputs in "Input Laporan"
   const [inputs, setInputs] = useState<Record<string, string>>({});
@@ -84,6 +89,19 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
     // Validation
     if (!reportDate) {
       setFormError('Tanggal laporan wajib diisi.');
+      return false;
+    }
+
+    // Restriction: Only one report per month per santri
+    const reportMonth = reportDate.substring(0, 7); // "YYYY-MM"
+    const existingSameMonth = allLaporan.find(l => 
+      l.id_santri === santriId && 
+      l.tanggal_laporan.startsWith(reportMonth) &&
+      l.tanggal_laporan !== reportDate
+    );
+
+    if (existingSameMonth) {
+      setFormError(`Laporan untuk bulan ${reportMonth} sudah ada pada tanggal ${formatDate(existingSameMonth.tanggal_laporan)}. Anda hanya bisa input 1 kali per bulan.`);
       return false;
     }
 
@@ -237,37 +255,41 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
     }
   };
 
-  const handleDeleteReport = async (reportId: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus laporan ini?')) {
-      const [tanggal, idSantri] = reportId.split('-');
+  const handleDeleteReport = (idSantri: string, tanggal: string) => {
+    setDeleteConfirm({ idSantri, tanggal });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    
+    const { idSantri, tanggal } = deleteConfirm;
+    setDeleteConfirm(null);
+    setIsProcessing(true);
+    try {
+      const result = await clampedTask(deleteReport(idSantri, tanggal), 1000, 15000);
       
-      setIsProcessing(true);
-      try {
-        const result = await clampedTask(deleteReport(idSantri, tanggal), 1000, 15000);
-        
-        if (result?.status === 'success') {
-          await refreshData(true);
-          setSuccessMessage('Laporan berhasil dihapus!');
-          setTimeout(() => setSuccessMessage(null), 3000);
-        } else {
-          throw new Error('Server rejected deletion');
-        }
-      } catch (error) {
-        console.error('Error deleting report:', error);
-        setFormError('Gagal menghapus laporan. Pastikan Apps Script memiliki action: deleteReport.');
-      } finally {
-        setIsProcessing(false);
+      if (result?.status === 'success') {
+        await refreshData(true);
+        setSuccessMessage('Laporan berhasil dihapus!');
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        throw new Error('Server rejected deletion');
       }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      setFormError('Gagal menghapus laporan. Pastikan Apps Script memiliki action: deleteReport.');
+    } finally {
+      setIsProcessing(false);
     }
   };
   
   // State for Keterangan per santri
   const [selectedSantriForReport, setSelectedSantriForReport] = useState<any>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ idSantri: string; tanggal: string } | null>(null);
 
   const openReportModal = (santri: any) => {
     setFormError(null);
-    setReportDate(getLocalDateString());
     setSelectedSantriForReport(santri);
     setIsReportModalOpen(true);
   };
@@ -317,13 +339,15 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
     return Object.values(groups)
       .filter(l => {
         const matchesSearch = l.nama_santri.toLowerCase().includes(searchQueryResults.toLowerCase());
-        let matchesDate = true;
-        if (startDate && l.tanggal_laporan < startDate) matchesDate = false;
-        if (endDate && l.tanggal_laporan > endDate) matchesDate = false;
-        return matchesSearch && matchesDate;
+        
+        const [year, month] = (l.tanggal_laporan || '').split('-');
+        const matchesYear = selectedYear ? year === selectedYear : true;
+        const matchesMonth = selectedMonth ? month === selectedMonth : true;
+        
+        return matchesSearch && matchesYear && matchesMonth;
       })
       .sort((a, b) => b.tanggal_laporan.localeCompare(a.tanggal_laporan));
-  }, [allLaporan, allSantri, selectedRombelId, searchQueryResults, startDate, endDate, currentUser]);
+  }, [allLaporan, allSantri, selectedRombelId, searchQueryResults, selectedMonth, selectedYear, currentUser]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-32 relative">
@@ -432,16 +456,43 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
                        <p className="text-xs text-gray-400">Klik nama generus untuk mengisi laporan harian.</p>
                      </div>
 
-                     {/* Search Input */}
-                     <div className="relative w-full md:w-80 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-primary transition-colors" size={18} />
-                        <input 
-                           type="text"
-                           placeholder="Cari nama generus..."
-                           value={searchQuery}
-                           onChange={(e) => setSearchQuery(e.target.value)}
-                           className="w-full pl-12 pr-4 py-3 bg-brand-bg/50 border border-brand-accent/50 rounded-2xl text-sm font-bold text-brand-primary focus:outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary transition-all shadow-sm"
-                        />
+                     <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+                        {/* Date Picker for Input replaced by Month/Year select */}
+                        <div className="flex items-center gap-2 p-1.5 bg-brand-bg/50 border border-brand-accent/50 rounded-2xl shadow-sm">
+                           <div className="flex items-center px-3 text-gray-400">
+                             <Calendar size={16} />
+                           </div>
+                           <select 
+                             value={reportDate.substring(5, 7)}
+                             onChange={(e) => setReportDate(`${reportDate.substring(0, 4)}-${e.target.value}-01`)}
+                             className="bg-white border-none rounded-xl px-3 md:px-4 py-2 text-sm font-bold text-brand-primary focus:outline-none outline-none cursor-pointer"
+                           >
+                             {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m, i) => (
+                               <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+                             ))}
+                           </select>
+                           <select 
+                             value={reportDate.substring(0, 4)}
+                             onChange={(e) => setReportDate(`${e.target.value}-${reportDate.substring(5, 7)}-01`)}
+                             className="bg-white border-none rounded-xl px-3 md:px-4 py-2 text-sm font-bold text-brand-primary focus:outline-none outline-none cursor-pointer"
+                           >
+                              {Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - 5 + i)).map(y => (
+                                <option key={y} value={y}>{y}</option>
+                              ))}
+                           </select>
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative w-full md:w-80 group">
+                           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-primary transition-colors" size={18} />
+                           <input 
+                              type="text"
+                              placeholder="Cari nama generus..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full pl-12 pr-4 py-3 bg-brand-bg/50 border border-brand-accent/50 rounded-2xl text-sm font-bold text-brand-primary focus:outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary transition-all shadow-sm"
+                           />
+                        </div>
                      </div>
                   </div>
                   
@@ -454,40 +505,59 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
                      </div>
 
                      <div className="flex flex-col gap-3">
-                        {santriInRombel.map((santri, idx) => (
-                          <button
-                            key={santri.id_santri}
-                            onClick={() => openReportModal(santri)}
-                            className="w-full grid grid-cols-1 md:grid-cols-12 items-center gap-4 p-4 md:p-6 bg-white border border-brand-accent/40 rounded-3xl md:rounded-[24px] hover:border-brand-primary/30 hover:bg-brand-bg/20 transition-all text-left shadow-sm group"
-                          >
-                            <div className="md:col-span-6 flex items-center gap-4">
-                              <span className="hidden md:block text-xs font-black text-brand-primary/20 w-6">
-                                {String(idx + 1).padStart(2, '0')}
-                              </span>
-                              <div className="w-10 h-10 md:w-12 md:h-12 bg-white border border-brand-accent rounded-2xl flex items-center justify-center text-brand-primary shadow-sm group-hover:scale-110 transition-transform flex-shrink-0">
-                                <span className="font-serif font-bold text-base md:text-lg">{santri.nama_santri.charAt(0)}</span>
-                              </div>
-                              <div className="flex flex-col overflow-hidden">
-                                <span className="font-bold text-brand-primary text-sm md:text-base truncate">{santri.nama_santri}</span>
-                                <span className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest">{getKelompokName(santri.id_kelompok)}</span>
-                              </div>
-                            </div>
+                        {santriInRombel.map((santri, idx) => {
+                          const currentMonthPrefix = reportDate.substring(0, 7);
+                          const alreadyReported = allLaporan.some(l => 
+                            l.id_santri === santri.id_santri && 
+                            l.tanggal_laporan.startsWith(currentMonthPrefix)
+                          );
 
-                            <div className="hidden md:block md:col-span-3">
-                              <div className="flex flex-col">
-                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Unit</span>
-                                 <span className="text-xs font-bold text-brand-primary">{getKelompokName(santri.id_kelompok)}</span>
+                          return (
+                            <button
+                              key={santri.id_santri}
+                              onClick={() => !alreadyReported && openReportModal(santri)}
+                              disabled={alreadyReported}
+                              className={`w-full grid grid-cols-1 md:grid-cols-12 items-center gap-4 p-4 md:p-6 bg-white border border-brand-accent/40 rounded-3xl md:rounded-[24px] transition-all text-left shadow-sm group ${
+                                alreadyReported 
+                                  ? 'opacity-70 cursor-not-allowed bg-brand-bg/10' 
+                                  : 'hover:border-brand-primary/30 hover:bg-brand-bg/20'
+                              }`}
+                            >
+                              <div className="md:col-span-6 flex items-center gap-4">
+                                <span className="hidden md:block text-xs font-black text-brand-primary/20 w-6">
+                                  {String(idx + 1).padStart(2, '0')}
+                                </span>
+                                <div className={`w-10 h-10 md:w-12 md:h-12 bg-white border border-brand-accent rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform flex-shrink-0 ${alreadyReported ? 'text-gray-300' : 'text-brand-primary'}`}>
+                                  <span className="font-serif font-bold text-base md:text-lg">{santri.nama_santri.charAt(0)}</span>
+                                </div>
+                                <div className="flex flex-col overflow-hidden">
+                                  <span className={`font-bold text-sm md:text-base truncate ${alreadyReported ? 'text-gray-400' : 'text-brand-primary'}`}>{santri.nama_santri}</span>
+                                  <span className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest">{getKelompokName(santri.id_kelompok)}</span>
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="md:col-span-3 flex items-center justify-end">
-                               <div className="flex items-center gap-2 px-4 py-2 bg-brand-primary/5 text-brand-primary rounded-xl text-xs font-bold group-hover:bg-brand-primary group-hover:text-white transition-all">
-                                  <span className="hidden sm:inline">Input Laporan</span>
-                                  <ChevronRight size={16} />
-                               </div>
-                            </div>
-                          </button>
-                        ))}
+                              <div className="hidden md:block md:col-span-3">
+                                <div className="flex flex-col">
+                                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Unit</span>
+                                   <span className="text-xs font-bold text-brand-primary">{getKelompokName(santri.id_kelompok)}</span>
+                                </div>
+                              </div>
+
+                              <div className="md:col-span-3 flex items-center justify-end">
+                                 <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                   alreadyReported 
+                                     ? 'bg-green-50 text-green-600' 
+                                     : 'bg-brand-primary/5 text-brand-primary group-hover:bg-brand-primary group-hover:text-white'
+                                 }`}>
+                                    <span className="hidden sm:inline">
+                                      {alreadyReported ? 'Sudah Dilaporkan' : 'Input Laporan'}
+                                    </span>
+                                    {alreadyReported ? <CheckCircle2 size={16} /> : <ChevronRight size={16} />}
+                                 </div>
+                              </div>
+                            </button>
+                          );
+                        })}
                      </div>
                      
                      {santriInRombel.length === 0 && (
@@ -506,24 +576,37 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
                      </div>
 
                      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
-                        {/* Date Range Filter */}
-                        <div className="flex items-center gap-2 p-1 bg-brand-bg rounded-2xl border border-brand-accent/50">
-                           <div className="flex items-center px-3 text-brand-primary opacity-50">
+                        {/* Month/Year Filter */}
+                        <div className="flex items-center gap-2 p-1.5 bg-brand-bg rounded-2xl border border-brand-accent/50">
+                           <div className="flex items-center px-2 text-brand-primary opacity-50">
                              <Calendar size={14} />
                            </div>
-                           <input 
-                              type="date" 
-                              value={startDate}
-                              onChange={(e) => setStartDate(e.target.value)}
-                              className="bg-transparent border-none text-[10px] font-bold text-brand-primary focus:outline-none p-2 w-28"
-                           />
-                           <span className="text-[10px] font-black text-gray-400">s/d</span>
-                           <input 
-                              type="date" 
-                              value={endDate}
-                              onChange={(e) => setEndDate(e.target.value)}
-                              className="bg-transparent border-none text-[10px] font-bold text-brand-primary focus:outline-none p-2 w-28"
-                           />
+                           <select 
+                             value={selectedMonth}
+                             onChange={(e) => setSelectedMonth(e.target.value)}
+                             className="bg-white border-none rounded-xl px-3 py-2 text-[10px] font-bold text-brand-primary focus:outline-none transition-all outline-none"
+                           >
+                             <option value="">Bulan</option>
+                             {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m, i) => (
+                               <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+                             ))}
+                           </select>
+
+                           <select 
+                             value={selectedYear}
+                             onChange={(e) => setSelectedYear(e.target.value)}
+                             className="bg-white border-none rounded-xl px-3 py-2 text-[10px] font-bold text-brand-primary focus:outline-none transition-all outline-none"
+                           >
+                             <option value="">Tahun</option>
+                             {Array.from(new Set([
+                               currentYear,
+                               ...allLaporan
+                                 .map(l => l.tanggal_laporan?.split('-')[0])
+                                 .filter((y): y is string => !!y)
+                             ])).sort((a, b) => b.localeCompare(a)).map(y => (
+                               <option key={y} value={y}>{y}</option>
+                             ))}
+                           </select>
                         </div>
 
                         {/* Search Input for Results */}
@@ -538,11 +621,11 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
                            />
                         </div>
 
-                        {(startDate || endDate || searchQueryResults) && (
+                        {(selectedMonth !== currentMonth || selectedYear !== currentYear || searchQueryResults) && (
                            <button 
                               onClick={() => {
-                                 setStartDate('');
-                                 setEndDate('');
+                                 setSelectedMonth(currentMonth);
+                                 setSelectedYear(currentYear);
                                  setSearchQueryResults('');
                               }}
                               className="text-[10px] font-bold text-red-500 hover:underline px-2"
@@ -603,7 +686,7 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
                                         <Pencil size={14} className="group-hover/btn:scale-110 transition-transform" />
                                      </button>
                                      <button 
-                                       onClick={() => handleDeleteReport(`${l.tanggal_laporan}-${l.id_santri}`)}
+                                       onClick={() => handleDeleteReport(l.id_santri, l.tanggal_laporan || '')}
                                        className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
                                        title="Hapus Laporan"
                                      >
@@ -630,6 +713,51 @@ export default function BuatLaporanPage({ currentUser }: BuatLaporanPageProps) {
       )}
 
       {/* Report Modal */}
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirm(null)}
+              className="absolute inset-0 bg-brand-primary/20 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-8 text-center space-y-6"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
+                <Trash2 size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif font-bold text-brand-primary">Hapus Laporan?</h3>
+                <p className="text-gray-500 text-sm mt-2">
+                  Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isReportModalOpen && selectedSantriForReport && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">

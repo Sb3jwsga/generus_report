@@ -44,16 +44,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const result = await clampedTask(fetchAllData(), 500, 45000);
       if (result && result.status === 'success') {
         console.log("Data loaded successfully:", result);
+        
+        // Helper to deduplicate items by a key
+        const uniqueById = <T,>(arr: T[], idKey: keyof T): T[] => {
+          if (!arr) return [];
+          const seen = new Set();
+          return arr.filter(item => {
+            const id = item[idKey];
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          });
+        };
+
         setData({
-          santri: result.santri || [],
-          rombel: result.rombel || [],
-          targets: result.target || [],
+          santri: uniqueById(result.santri || [], 'id_santri'),
+          rombel: uniqueById(result.rombel || [], 'id_rombel'),
+          targets: result.target || [], // Target depends on rombel+targetName, might need careful deduplication if needed but usually okay
           laporan: result.laporan || [],
-          keterangan: result.keterangan || [],
+          keterangan: uniqueById(result.keterangan || [], 'id_keterangan'),
           laporanKeterangan: result.laporan_keterangan || [],
-          desa: result.desa || [],
-          kelompok: result.kelompok || [],
-          materi: result.materi || [],
+          desa: uniqueById(result.desa || [], 'id_desa'),
+          kelompok: uniqueById(result.kelompok || [], 'id_kelompok'),
+          materi: uniqueById(result.materi || [], 'id_materi'),
           loading: false,
           error: null
         });
