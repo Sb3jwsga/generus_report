@@ -101,7 +101,7 @@ export default function FormGenerusPage() {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
         <button
-          onClick={() => navigate('/pengurus/generus')}
+          onClick={() => navigate(`/pengurus/generus?search=${encodeURIComponent(search)}&rombel=${rombel}&sortKey=${sortKey}&sortDir=${sortDir}`)}
           className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-semibold mb-4"
         >
           <Icon name="arrow_back" size={16} /> Kembali ke Data Generus
@@ -150,7 +150,7 @@ export default function FormGenerusPage() {
                 </div>
               )}
               <div className="pt-4 flex gap-2 justify-end">
-                <Button variant="outline" type="button" onClick={() => navigate('/pengurus/generus')}>Batal</Button>
+                <Button variant="outline" type="button" onClick={() => navigate(`/pengurus/generus?search=${encodeURIComponent(search)}&rombel=${rombel}&sortKey=${sortKey}&sortDir=${sortDir}`)}>Batal</Button>
                 <Button type="submit" disabled={saving}>
                   <Icon name="save" size={18} /> {saving ? 'Menyimpan...' : isEdit ? 'Update Data' : 'Simpan Data'}
                 </Button>

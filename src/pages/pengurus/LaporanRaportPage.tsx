@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../api/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
@@ -12,12 +12,13 @@ import type { SemesterConfig } from '../../types';
 
 export default function LaporanRaportPage() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [generusList, setGenerusList] = useState<any[]>([]);
   const [raportList, setRaportList] = useState<any[]>([]);
   const [rombelList, setRombelList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedRombel, setSelectedRombel] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [selectedRombel, setSelectedRombel] = useState(searchParams.get('rombel') || '');
   const [activeTab, setActiveTab] = useState<'generus' | 'riwayat'>('generus');
   const [semesterConfig, setSemesterConfig] = useState<SemesterConfig | null>(null);
 
@@ -57,6 +58,12 @@ export default function LaporanRaportPage() {
     setRaportList(raportList.filter((item) => item.id_laporan_raport !== id));
   };
 
+  const applyFilters = (s: string, r: string) => {
+    setSearch(s);
+    setSelectedRombel(r);
+    setSearchParams({ search: s, rombel: r });
+  };
+
   const currentBulan = new Date().getMonth() + 1;
   const currentSemester = semesterConfig
     ? (currentBulan >= semesterConfig.ganjil_bulan_awal && currentBulan <= semesterConfig.ganjil_bulan_akhir ? 'Ganjil' : 'Genap')
@@ -83,6 +90,8 @@ export default function LaporanRaportPage() {
     return matchSearch && matchRombel;
   });
 
+  const commonParams = `search=${encodeURIComponent(search)}&rombel=${selectedRombel}`;
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -90,7 +99,7 @@ export default function LaporanRaportPage() {
         title="Laporan Raport"
         description="Klik nama generus pada tabel untuk menginput raport semester."
         action={
-          <Link to="/pengurus/laporan-raport/tambah">
+          <Link to={`/pengurus/laporan-raport/tambah?${commonParams}`}>
             <Button>
               <Icon name="add" size={18} /> Input Raport
             </Button>
@@ -123,49 +132,30 @@ export default function LaporanRaportPage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex flex-col gap-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedRombel('')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-                selectedRombel === ''
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Semua Rombel
-            </button>
-            {rombelList.map((r) => (
-              <button
-                key={r.id_rombel}
-                onClick={() => setSelectedRombel(r.nama_rombel)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-                  selectedRombel === r.nama_rombel
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {r.nama_rombel}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-            <div className="relative max-w-sm w-full">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-sm">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Icon name="search" size={18} />
               </span>
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => applyFilters(e.target.value, selectedRombel)}
                 placeholder="Cari nama generus..."
-                className="w-full rounded-lg bg-gray-50 pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg bg-gray-50 pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
-            {activeTab === 'generus' && (
-              <p className="text-xs text-gray-500 italic">
-                Klik nama generus atau tombol "Laporkan" untuk mengisi raport.
-              </p>
-            )}
+            <select
+              value={selectedRombel}
+              onChange={(e) => applyFilters(search, e.target.value)}
+              className="rounded-lg border border-gray-300 bg-white py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="">Semua Rombel</option>
+              {rombelList.map((r) => (
+                <option key={r.id_rombel} value={r.nama_rombel}>
+                  {r.nama_rombel}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -190,7 +180,7 @@ export default function LaporanRaportPage() {
                       <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Generus</th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">L/P</th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rombel</th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status {currentSemester}</th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status {currentSemester} {currentTahun}</th>
                       <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                   </thead>
@@ -201,11 +191,11 @@ export default function LaporanRaportPage() {
                         <tr key={g.id_generus} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4">
                             <Link
-                              to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}${existing ? '&edit=true' : ''}`}
+                              to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}${existing ? '&edit=true' : ''}&${commonParams}`}
                               className="flex items-center gap-3 group"
-                              title={existing ? 'Klik untuk mengedit' : 'Klik untuk melaporkan raport'}
+                              title={existing ? 'Klik untuk mengedit' : 'Klik untuk menginput raport'}
                             >
-                              <div className="w-9 h-9 rounded-full bg-secondary-container text-gray-900 flex items-center justify-center text-sm font-bold shrink-0">
+                              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shrink-0">
                                 {g.nama_generus.charAt(0)}
                               </div>
                               <span className="font-semibold text-gray-900 group-hover:text-primary transition-colors underline-offset-2 group-hover:underline">
@@ -225,29 +215,29 @@ export default function LaporanRaportPage() {
                             {existing ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
                                 <Icon name="check_circle" size={14} />
-                                Sudah Dilaporkan
+                                Raport Selesai
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
                                 <Icon name="pending" size={14} className="text-gray-500" />
-                                Belum Dilaporkan
+                                Belum Diinput
                               </span>
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
                             {existing ? (
                               <Link
-                                to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}&edit=true`}
+                                to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}&edit=true&${commonParams}`}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary-container text-gray-900 text-xs font-bold hover:bg-secondary-fixed transition-colors"
                               >
                                 <Icon name="edit" size={16} /> Edit Raport
                               </Link>
                             ) : (
                               <Link
-                                to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
+                                to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}&${commonParams}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
                               >
-                                <Icon name="school" size={16} /> Laporkan
+                                <Icon name="post_add" size={16} /> Input Raport
                               </Link>
                             )}
                           </td>
@@ -258,36 +248,31 @@ export default function LaporanRaportPage() {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
+              {/* Mobile List */}
               <div className="md:hidden divide-y divide-gray-100">
                 {filteredGenerus.map((g) => {
                   const existing = getExistingRaport(g.id_generus);
                   return (
-                    <div key={g.id_generus} className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                      <Link
-                        to={existing ? `/pengurus/laporan-raport/tambah?generusId=${g.id_generus}&edit=true` : `/pengurus/laporan-raport/tambah?generusId=${g.id_generus}`}
-                        className="w-11 h-11 rounded-full bg-secondary-container text-gray-900 flex items-center justify-center font-bold shrink-0"
-                      >
+                    <div key={g.id_generus} className="p-4 flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
                         {g.nama_generus.charAt(0)}
-                      </Link>
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <Link
-                          to={existing ? `/pengurus/laporan-raport/tambah?generusId=${g.id_generus}&edit=true` : `/pengurus/laporan-raport/tambah?generusId=${g.id_generus}`}
-                          className="font-bold text-gray-900 truncate block hover:text-primary"
-                        >
-                          {g.nama_generus}
-                        </Link>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {g.rombel?.nama_rombel || '-'} • {g.jenis_kelamin === 'Laki-laki' ? 'L' : 'P'} • {existing ? 'Sudah' : 'Belum'}
-                        </p>
+                        <p className="font-bold text-gray-900 truncate">{g.nama_generus}</p>
+                        <p className="text-xs text-gray-500">{g.rombel?.nama_rombel || '-'} • {g.jenis_kelamin === 'Laki-laki' ? 'L' : 'P'}</p>
+                        <div className="mt-1">
+                          {existing ? (
+                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded uppercase">Raport OK</span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded uppercase">Belum Input</span>
+                          )}
+                        </div>
                       </div>
                       <Link
-                        to={existing ? `/pengurus/laporan-raport/tambah?generusId=${g.id_generus}&edit=true` : `/pengurus/laporan-raport/tambah?generusId=${g.id_generus}`}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
-                          existing ? 'bg-secondary-container text-gray-900' : 'bg-primary text-white'
-                        }`}
+                        to={`/pengurus/laporan-raport/tambah?generusId=${g.id_generus}${existing ? '&edit=true' : ''}&${commonParams}`}
+                        className={`p-2.5 rounded-xl ${existing ? 'text-gray-400 bg-gray-50' : 'text-primary bg-primary-container/10'}`}
                       >
-                        <Icon name={existing ? 'edit' : 'school'} size={16} /> {existing ? 'Edit' : 'Raport'}
+                        <Icon name={existing ? 'edit' : 'post_add'} size={20} />
                       </Link>
                     </div>
                   );
@@ -299,37 +284,52 @@ export default function LaporanRaportPage() {
           filteredRaport.length === 0 ? (
             <div className="p-4">
               <EmptyState
-                icon="school"
-                title={raportList.length === 0 ? 'Belum ada raport' : 'Tidak ada hasil'}
-                description="Input raport semester baru atau ubah kata kunci."
+                icon="history"
+                title="Belum ada riwayat"
+                description="Belum ada laporan raport yang diinput."
               />
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
-              {filteredRaport.map((l) => (
-                <div key={l.id_laporan_raport} className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                  <div className="w-11 h-11 rounded-xl bg-secondary-container text-gray-900 flex items-center justify-center font-bold shrink-0">
-                    {(l.generus?.nama_generus || '?').charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 truncate">{l.generus?.nama_generus}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                      <Icon name="school" size={13} />
-                      {l.generus?.rombel?.nama_rombel || 'Tanpa rombel'}
-                    </p>
-                  </div>
-                  <span className="hidden sm:inline-flex px-2.5 py-1 rounded-full bg-primary-container/10 text-primary text-[11px] font-bold shrink-0">
-                    Raport
-                  </span>
-                  <button
-                    onClick={() => handleDeleteRaport(l.id_laporan_raport)}
-                    className="p-2 rounded-lg text-gray-400 hover:text-error hover:bg-error-container/50 transition-colors shrink-0"
-                    title="Hapus raport"
-                  >
-                    <Icon name="delete" size={18} />
-                  </button>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Semester</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Generus</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rombel</th>
+                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredRaport.map((l) => (
+                    <tr key={l.id_laporan_raport} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                        {l.semester} {l.tahun_ajaran}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-primary">{l.generus?.nama_generus}</td>
+                      <td className="px-6 py-4 text-xs font-medium text-gray-500">{l.generus?.rombel?.nama_rombel || '-'}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <Link
+                            to={`/pengurus/laporan-raport/tambah?id=${l.id_laporan_raport}&edit=true&${commonParams}`}
+                            className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-container/10 transition-colors"
+                            title="Edit"
+                          >
+                            <Icon name="edit" size={18} />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteRaport(l.id_laporan_raport)}
+                            className="p-2 rounded-lg text-gray-400 hover:text-error hover:bg-error-container/50 transition-colors"
+                            title="Hapus"
+                          >
+                            <Icon name="delete" size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )
         )}

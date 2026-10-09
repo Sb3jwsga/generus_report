@@ -196,7 +196,7 @@ export default function FormLaporanRaportPage() {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
         <button
-          onClick={() => navigate('/pengurus/laporan-raport')}
+          onClick={() => navigate(`/pengurus/laporan-raport?search=${encodeURIComponent(search)}&rombel=${rombel}`)}
           className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-semibold mb-4"
         >
           <Icon name="arrow_back" size={16} /> Kembali ke Laporan Raport
@@ -311,7 +311,7 @@ export default function FormLaporanRaportPage() {
             )}
 
             <div className="pt-2 flex gap-2 justify-end">
-              <Button variant="outline" type="button" onClick={() => navigate('/pengurus/laporan-raport')}>
+              <Button variant="outline" type="button" onClick={() => navigate(`/pengurus/laporan-raport?search=${encodeURIComponent(search)}&rombel=${rombel}`)}>
                 Batal
               </Button>
               <Button type="submit" disabled={loading || targets.length === 0}>
