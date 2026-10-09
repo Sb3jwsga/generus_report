@@ -1,16 +1,16 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "framework": "vite",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
+  "outputDirectory": "dist",
   "routes": [
     {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/index.html"
     }
   ]
 }
