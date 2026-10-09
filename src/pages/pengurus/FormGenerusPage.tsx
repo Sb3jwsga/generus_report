@@ -15,6 +15,12 @@ export default function FormGenerusPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('id');
+  const search = searchParams.get('search') || '';
+  const rombel = searchParams.get('rombel') || '';
+  const sortKey = searchParams.get('sortKey') as SortKey || 'nama_generus';
+  const sortDir = searchParams.get('sortDir') as SortDir || 'asc';
+  type SortKey = 'nama_generus' | 'jenis_kelamin' | 'tanggal_lahir' | 'rombel';
+  type SortDir = 'asc' | 'desc';
   const isEdit = !!editId;
 
   const [rombelList, setRombelList] = useState<Rombel[]>([]);
@@ -82,7 +88,7 @@ export default function FormGenerusPage() {
       setFormError(`Gagal menyimpan: ${error.message}`);
       return;
     }
-    navigate('/pengurus/generus');
+    navigate(`/pengurus/generus?search=${encodeURIComponent(search)}&rombel=${rombel}&sortKey=${sortKey}&sortDir=${sortDir}`);
   };
 
   const rombelOptions = rombelList.map((r) => ({ value: r.id_rombel, label: r.nama_rombel }));

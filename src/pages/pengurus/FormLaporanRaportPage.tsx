@@ -15,6 +15,8 @@ export default function FormLaporanRaportPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialGenerusId = searchParams.get('generusId') || searchParams.get('id') || '';
+  const search = searchParams.get('search') || '';
+  const rombel = searchParams.get('rombel') || '';
 
   const [generusList, setGenerusList] = useState<Generus[]>([]);
   const [selectedGenerusId, setSelectedGenerusId] = useState(initialGenerusId);
@@ -151,7 +153,7 @@ export default function FormLaporanRaportPage() {
         }).eq('id_laporan_raport', existingLaporanId);
         if (errLaporan) throw errLaporan;
 
-        navigate('/pengurus/laporan-raport');
+        navigate(`/pengurus/laporan-raport?search=${encodeURIComponent(search)}&rombel=${rombel}`);
       } else {
         const catatanId = await saveCatatanRaport(null);
 
@@ -176,7 +178,7 @@ export default function FormLaporanRaportPage() {
         }));
         const { error: errDetail } = await supabase.from('detail_raport').insert(details);
         if (errDetail) throw errDetail;
-        navigate('/pengurus/laporan-raport');
+        navigate(`/pengurus/laporan-raport?search=${encodeURIComponent(search)}&rombel=${rombel}`);
       }
     } catch (err: any) {
       setError(`Gagal menyimpan: ${err.message || 'Coba lagi.'}`);

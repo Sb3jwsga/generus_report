@@ -15,6 +15,8 @@ export default function FormLaporanBulananPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialGenerusId = searchParams.get('generusId') || searchParams.get('id') || '';
+  const search = searchParams.get('search') || '';
+  const rombel = searchParams.get('rombel') || '';
 
   const [generusList, setGenerusList] = useState<Generus[]>([]);
   const [selectedGenerusId, setSelectedGenerusId] = useState(initialGenerusId);
@@ -149,7 +151,7 @@ export default function FormLaporanBulananPage() {
         }).eq('id_laporan', existingLaporanId);
 
         if (errLaporan) throw errLaporan;
-        navigate('/pengurus/laporan-bulanan');
+        navigate(`/pengurus/laporan-bulanan?search=${encodeURIComponent(search)}&rombel=${rombel}`);
       } else {
         const catatanId = await saveCatatan(null);
 
@@ -172,7 +174,7 @@ export default function FormLaporanBulananPage() {
         }));
         const { error: errDetail } = await supabase.from('detail_laporan_bulanan').insert(details);
         if (errDetail) throw errDetail;
-        navigate('/pengurus/laporan-bulanan');
+        navigate(`/pengurus/laporan-bulanan?search=${encodeURIComponent(search)}&rombel=${rombel}`);
       }
     } catch (err: any) {
       setError(`Gagal menyimpan: ${err.message || 'Coba lagi.'}`);

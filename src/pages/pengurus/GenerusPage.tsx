@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../api/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Generus } from '../../types';
@@ -16,13 +16,14 @@ type SortDir = 'asc' | 'desc';
 
 export default function GenerusPage() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [rombelList, setRombelList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [rombelFilter, setRombelFilter] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('nama_generus');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [rombelFilter, setRombelFilter] = useState(searchParams.get('rombel') || '');
+  const [sortKey, setSortKey] = useState<SortKey>((searchParams.get('sortKey') as SortKey) || 'nama_generus');
+  const [sortDir, setSortDir] = useState<SortDir>((searchParams.get('sortDir') as SortDir) || 'asc');
 
   useEffect(() => {
     if (!user?.id_kelompok) return;
@@ -47,6 +48,14 @@ export default function GenerusPage() {
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else { setSortKey(key); setSortDir('asc'); }
+  };
+
+  const applyFilters = (s: string, r: string, sk: SortKey, sd: SortDir) => {
+    setSearch(s);
+    setRombelFilter(r);
+    setSortKey(sk);
+    setSortDir(sd);
+    setSearchParams({ search: s, rombel: r, sortKey: sk, sortDir: sd });
   };
 
   const filteredSorted = useMemo(() => {
@@ -104,19 +113,19 @@ export default function GenerusPage() {
             </span>
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => applyFilters(e.target.value, rombelFilter, sortKey, sortDir)}
               placeholder="Cari nama generus..."
               className="w-full rounded-lg bg-gray-50 pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="sm:w-56">
-            <Combobox options={rombelOptions} value={rombelFilter || null} onChange={setRombelFilter} placeholder="Filter Rombel" />
+            <Combobox options={rombelOptions} value={rombelFilter || null} onChange={(val) => applyFilters(search, val, sortKey, sortDir)} placeholder="Filter Rombel" />
           </div>
           <div className="flex items-center gap-2 sm:ml-auto">
             <span className="text-xs text-gray-400 hidden sm:inline">{filteredSorted.length} hasil</span>
             <select
               value={`${sortKey}:${sortDir}`}
-              onChange={(e) => { const [k, d] = e.target.value.split(':') as [SortKey, SortDir]; setSortKey(k); setSortDir(d); }}
+              onChange={(e) => { const [k, d] = e.target.value.split(':') as [SortKey, SortDir]; applyFilters(search, rombelFilter, k, d); }}
               className="rounded-lg border border-gray-200 bg-white py-2.5 px-3 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="nama_generus:asc">Nama A → Z</option>
@@ -184,7 +193,7 @@ export default function GenerusPage() {
                             <Icon name="visibility" size={18} />
                           </Link>
                           <Link
-                            to={`/pengurus/generus/tambah?id=${g.id_generus}`}
+                            to={`/pengurus/generus/tambah?id=${g.id_generus}&search=${encodeURIComponent(search)}&rombel=${rombelFilter}&sortKey=${sortKey}&sortDir=${sortDir}`}
                             className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                             title="Edit"
                           >
@@ -216,7 +225,7 @@ export default function GenerusPage() {
                     <p className="text-xs text-gray-500">{g.rombel?.nama_rombel || '-'} • {g.jenis_kelamin === 'Laki-laki' ? 'L' : 'P'}</p>
                   </div>
                   <div className="inline-flex items-center shrink-0">
-                    <Link to={`/pengurus/generus/tambah?id=${g.id_generus}`} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100" title="Edit">
+                    <Link to={`/pengurus/generus/tambah?id=${g.id_generus}&search=${encodeURIComponent(search)}&rombel=${rombelFilter}&sortKey=${sortKey}&sortDir=${sortDir}`} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100" title="Edit">
                       <Icon name="edit" size={18} />
                     </Link>
                     <Link to={`/pengurus/generus/${g.id_generus}`} className="p-2 rounded-lg text-primary hover:bg-primary-container/10" title="Detail">
