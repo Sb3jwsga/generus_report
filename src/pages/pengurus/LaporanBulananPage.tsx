@@ -46,8 +46,26 @@ export default function LaporanBulananPage() {
   }, [user]);
 
   const handleDeleteLaporan = async (id: string) => {
-    if (!confirm('Hapus laporan ini beserta detail capaiannya?')) return;
-    await supabase.from('laporan_bulanan').delete().eq('id_laporan', id);
+    if (!confirm('Hapus laporan ini beserta detail capaian dan catatannya?')) return;
+    const target = laporanList.find((item) => item.id_laporan === id);
+    const catatanId = target?.id_catatan || null;
+
+    const { error: errDetail } = await supabase.from('detail_laporan_bulanan').delete().eq('id_laporan', id);
+    if (errDetail) {
+      alert(`Gagal menghapus detail laporan: ${errDetail.message}`);
+      return;
+    }
+
+    const { error: errLaporan } = await supabase.from('laporan_bulanan').delete().eq('id_laporan', id);
+    if (errLaporan) {
+      alert(`Gagal menghapus laporan: ${errLaporan.message}`);
+      return;
+    }
+
+    if (catatanId) {
+      await supabase.from('catatan').delete().eq('id_catatan', catatanId);
+    }
+
     setLaporanList(laporanList.filter((item) => item.id_laporan !== id));
   };
 
