@@ -17,6 +17,7 @@ export function Sidebar({ isMobile = false, onToggleMobile }: SidebarProps) {
     { label: 'Data Desa', to: '/admin/desa', icon: 'holiday_village' },
     { label: 'Data Kelompok', to: '/admin/kelompok', icon: 'groups' },
     { label: 'Data Rombel', to: '/admin/rombel', icon: 'school' },
+    { label: 'Kelola Generus', to: '/admin/generus', icon: 'person_add' },
     { label: 'Manajemen User', to: '/admin/user', icon: 'person' },
     { label: 'Target Bulanan', to: '/admin/target-bulanan', icon: 'assessment' },
     { label: 'Target Raport', to: '/admin/target-raport', icon: 'grade' },
@@ -79,15 +80,6 @@ export function Sidebar({ isMobile = false, onToggleMobile }: SidebarProps) {
         </div>
 
         <div className="px-space-md mt-4">
-          <div className="p-4 rounded-xl bg-primary flex flex-col gap-2 mb-3">
-            <div className="flex items-center gap-2 text-secondary-fixed">
-              <Icon name="verified" size={18} />
-              <span className="text-xs font-semibold">Pusat Monitoring</span>
-            </div>
-            <p className="text-xs text-white/80 leading-relaxed">
-              Data generus terintegrasi antar halaqah & daerah.
-            </p>
-          </div>
           <button
             onClick={logout}
             className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors font-medium"

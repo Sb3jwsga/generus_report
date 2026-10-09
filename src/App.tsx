@@ -17,6 +17,7 @@ import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DesaPage from './pages/admin/DesaPage';
 import KelompokPage from './pages/admin/KelompokPage';
 import RombelPage from './pages/admin/RombelPage';
+import AdminGenerusPage from './pages/admin/GenerusPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import KategoriCatatanPage from './pages/admin/KategoriCatatanPage';
 import TargetBulananPage from './pages/admin/TargetBulananPage';
@@ -79,6 +80,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['Admin']}>
                 <RombelPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/generus"
+            element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <AdminGenerusPage />
               </ProtectedRoute>
             }
           />

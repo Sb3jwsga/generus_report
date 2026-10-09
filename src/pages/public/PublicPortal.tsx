@@ -6,12 +6,46 @@ import { Icon } from '../../components/ui/Icon';
 
 export default function PublicPortal() {
   const [totalGenerus, setTotalGenerus] = useState<number | null>(null);
+  const [totalMale, setTotalMale] = useState<number | null>(null);
+  const [totalFemale, setTotalFemale] = useState<number | null>(null);
 
   useEffect(() => {
-    supabase.from('generus').select('*', { count: 'exact', head: true }).then(({ count }) => {
-      setTotalGenerus(count ?? 0);
-    });
+    const fetchStats = async () => {
+      const [generusCount, maleCount, femaleCount] = await Promise.all([
+        supabase.from('generus').select('*', { count: 'exact', head: true }).then(({ count }) => count ?? 0),
+        supabase.from('generus').select('*', { count: 'exact' }).eq('jenis_kelamin', 'Laki-laki').then(({ count }) => count ?? 0),
+        supabase.from('generus').select('*', { count: 'exact' }).eq('jenis_kelamin', 'Perempuan').then(({ count }) => count ?? 0),
+      ]);
+      setTotalGenerus(generusCount);
+      setTotalMale(maleCount);
+      setTotalFemale(femaleCount);
+    };
+    fetchStats();
   }, []);
+
+  const stats = [
+    {
+      icon: 'groups',
+      value: totalGenerus,
+      label: 'Total Generus',
+      color: 'bg-primary',
+      textColor: 'text-white'
+    },
+    {
+      icon: 'male',
+      value: totalMale,
+      label: 'Laki-laki',
+      color: 'bg-[#1e63b2]',
+      textColor: 'text-white'
+    },
+    {
+      icon: 'female',
+      value: totalFemale,
+      label: 'Perempuan',
+      color: 'bg-[#d63384]',
+      textColor: 'text-white'
+    }
+  ];
 
   return (
     <div className="bg-surface text-on-surface min-h-screen">
@@ -55,30 +89,24 @@ export default function PublicPortal() {
               Pantau transparansi capaian belajar, materi kurikulum, dan rekapitulasi raport generus secara terbuka dan mudah diakses oleh orang tua.
             </p>
 
-            <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-2 p-2 rounded-xl bg-white shadow-xl">
-              <div className="relative flex-1 flex items-center">
-                <span className="absolute left-3 text-gray-400">
-                  <Icon name="search" size={20} />
-                </span>
-                <input
-                  className="w-full pl-10 pr-4 py-3 bg-transparent text-gray-900 text-sm focus:outline-none"
-                  placeholder="Ketik Nama Generus untuk cek raport..."
-                />
-              </div>
-              <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary-container hover:bg-secondary-fixed text-gray-900 text-sm font-semibold transition-all shadow-sm"
-              >
-                <Icon name="admin_panel_settings" size={20} />
-                Login Pengurus
-              </Link>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-white/80 text-sm font-medium">
-              <div className="flex items-center gap-2">
-                <Icon name="group" size={18} className="text-secondary-fixed" />
-                <span>{totalGenerus === null ? 'Memuat...' : `${totalGenerus} Generus Terdaftar`}</span>
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-8 mt-8">
+              {stats.map((stat, index) => (
+                <div key={index} className="flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg bg-white/95 backdrop-blur-sm">
+                  <div className={`w-12 h-12 rounded-lg ${stat.color} ${stat.textColor} flex items-center justify-center flex-shrink-0 shadow-md`}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>
+                      {stat.icon}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl lg:text-3xl font-bold leading-none text-gray-900">
+                      {stat.value === null ? '—' : stat.value}
+                    </span>
+                    <span className="text-sm lg:text-base font-medium text-gray-600 mt-1">
+                      {stat.label}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
