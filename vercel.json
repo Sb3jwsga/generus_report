@@ -1,0 +1,38 @@
+{
+  "version": 3,
+  "name": "generus-app",
+  "rootDirectory": "/",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "/dist",
+  "nodeVersion": "18.x",
+  "framework": {
+    "slug": "vite",
+    "version": "5.0.0"
+  },
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html",
+      "status": 200
+    }
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "@env.VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY": "@env.VITE_SUPABASE_ANON_KEY"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}
