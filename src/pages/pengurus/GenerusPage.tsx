@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../api/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,22 +9,30 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Icon } from '../../components/ui/Icon';
+import { Combobox } from '../../components/ui/Combobox';
+
+type SortKey = 'nama_generus' | 'jenis_kelamin' | 'tanggal_lahir' | 'rombel';
+type SortDir = 'asc' | 'desc';
 
 export default function GenerusPage() {
   const { user } = useAuth();
   const [data, setData] = useState<any[]>([]);
+  const [rombelList, setRombelList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [rombelFilter, setRombelFilter] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('nama_generus');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   useEffect(() => {
     if (!user?.id_kelompok) return;
     const fetch = async () => {
-      const { data: d } = await supabase
-        .from('generus')
-        .select('*, rombel(nama_rombel)')
-        .eq('id_kelompok', user.id_kelompok)
-        .order('nama_generus');
+      const [{ data: d }, { data: rombel }] = await Promise.all([
+        supabase.from('generus').select('*, rombel(nama_rombel)').eq('id_kelompok', user.id_kelompok),
+        supabase.from('rombel').select('*').order('nama_rombel'),
+      ]);
       setData(d || []);
+      setRombelList(rombel || []);
       setLoading(false);
     };
     fetch();
@@ -36,9 +44,42 @@ export default function GenerusPage() {
     setData(data.filter((d) => d.id_generus !== id));
   };
 
-  const filtered = data.filter((g: Generus) =>
-    g.nama_generus.toLowerCase().includes(search.toLowerCase())
-  );
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir('asc'); }
+  };
+
+  const filteredSorted = useMemo(() => {
+    const filtered = data.filter((g: Generus) => {
+      if (rombelFilter && g.id_rombel !== rombelFilter) return false;
+      return g.nama_generus.toLowerCase().includes(search.toLowerCase());
+    });
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let va: string = '';
+      let vb: string = '';
+      if (sortKey === 'rombel') { va = a.rombel?.nama_rombel || ''; vb = b.rombel?.nama_rombel || ''; }
+      else { va = (a[sortKey] || '') as string; vb = (b[sortKey] || '') as string; }
+      return va.localeCompare(vb, 'id') * dir;
+    });
+  }, [data, search, rombelFilter, sortKey, sortDir]);
+
+  const rombelOptions = rombelList.map((r) => ({ value: r.id_rombel, label: r.nama_rombel }));
+
+  const Th = ({ label, sortKey: k }: { label: string; sortKey: SortKey }) => {
+    const active = sortKey === k;
+    return (
+      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+        <button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 hover:text-gray-700 transition-colors">
+          {label}
+          <span className={`inline-flex flex-col leading-none text-[10px] ${active ? 'text-primary' : 'text-gray-300'}`}>
+            <Icon name="arrow_drop_up" size={14} filled={active && sortDir === 'asc'} />
+            <Icon name="arrow_drop_down" size={14} filled={active && sortDir === 'desc'} />
+          </span>
+        </button>
+      </th>
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -56,8 +97,8 @@ export default function GenerusPage() {
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100">
-          <div className="relative max-w-sm">
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-sm">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <Icon name="search" size={18} />
             </span>
@@ -68,11 +109,29 @@ export default function GenerusPage() {
               className="w-full rounded-lg bg-gray-50 pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
+          <div className="sm:w-56">
+            <Combobox options={rombelOptions} value={rombelFilter || null} onChange={setRombelFilter} placeholder="Filter Rombel" />
+          </div>
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <span className="text-xs text-gray-400 hidden sm:inline">{filteredSorted.length} hasil</span>
+            <select
+              value={`${sortKey}:${sortDir}`}
+              onChange={(e) => { const [k, d] = e.target.value.split(':') as [SortKey, SortDir]; setSortKey(k); setSortDir(d); }}
+              className="rounded-lg border border-gray-200 bg-white py-2.5 px-3 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="nama_generus:asc">Nama A → Z</option>
+              <option value="nama_generus:desc">Nama Z → A</option>
+              <option value="tanggal_lahir:asc">Lahir terlama</option>
+              <option value="tanggal_lahir:desc">Lahir terbaru</option>
+              <option value="rombel:asc">Rombel A → Z</option>
+              <option value="rombel:desc">Rombel Z → A</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center p-12"><Spinner size="lg" /></div>
-        ) : filtered.length === 0 ? (
+        ) : filteredSorted.length === 0 ? (
           <div className="p-4">
             <EmptyState
               icon="groups"
@@ -86,15 +145,15 @@ export default function GenerusPage() {
               <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">L/P</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Lahir</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rombel</th>
+                    <Th label="Nama" sortKey="nama_generus" />
+                    <Th label="L/P" sortKey="jenis_kelamin" />
+                    <Th label="Tanggal Lahir" sortKey="tanggal_lahir" />
+                    <Th label="Rombel" sortKey="rombel" />
                     <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filtered.map((g) => (
+                  {filteredSorted.map((g) => (
                     <tr key={g.id_generus} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -147,7 +206,7 @@ export default function GenerusPage() {
             </div>
 
             <div className="md:hidden divide-y divide-gray-100">
-              {filtered.map((g) => (
+              {filteredSorted.map((g) => (
                 <div key={g.id_generus} className="p-4 flex items-center gap-3">
                   <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
                     {g.nama_generus.charAt(0)}
