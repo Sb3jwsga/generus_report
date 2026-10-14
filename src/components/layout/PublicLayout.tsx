@@ -12,6 +12,7 @@ const tabs = [
   { label: 'Pencapaian Bulanan', to: '/public/capaian', icon: 'assessment' },
   { label: 'Raport Semester', to: '/public/raport', icon: 'school' },
   { label: 'Materi Belajar', to: '/public/materi', icon: 'menu_book' },
+  { label: 'Target Bulanan', to: '/public/target', icon: 'flag' },
 ];
 
 export function PublicLayout({ children }: PublicLayoutProps) {

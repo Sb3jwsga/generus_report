@@ -111,12 +111,13 @@ export default function PublicPortal() {
           </div>
         </section>
 
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: 'Direktori Generus', desc: 'Data lengkap generus per rombel & kelompok', to: '/public/generus', icon: 'groups', bg: 'bg-primary' },
             { label: 'Pencapaian Bulanan', desc: 'Grafik capaian target bulanan', to: '/public/capaian', icon: 'assessment', bg: 'bg-secondary-container' },
             { label: 'Raport Semester', desc: 'Nilai raport semester transparan', to: '/public/raport', icon: 'school', bg: 'bg-primary' },
             { label: 'Materi Belajar', desc: 'Silabus & modul pembelajaran', to: '/public/materi', icon: 'menu_book', bg: 'bg-secondary-container' },
+            { label: 'Target Bulanan', desc: 'Target capaian per bulan per rombel', to: '/public/target', icon: 'flag', bg: 'bg-primary' },
           ].map((item) => (
             <Link
               key={item.label}

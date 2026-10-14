@@ -8,6 +8,7 @@ import PublicGenerusPage from './pages/public/PublicGenerusPage';
 import PublicCapaianPage from './pages/public/PublicCapaianPage';
 import PublicRaportPage from './pages/public/PublicRaportPage';
 import PublicMateriPage from './pages/public/PublicMateriPage';
+import PublicTargetPage from './pages/public/PublicTargetPage';
 
 // Auth
 import LoginPage from './pages/auth/LoginPage';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/public/capaian" element={<PublicCapaianPage />} />
           <Route path="/public/raport" element={<PublicRaportPage />} />
           <Route path="/public/materi" element={<PublicMateriPage />} />
+          <Route path="/public/target" element={<PublicTargetPage />} />
 
           {/* Login */}
           <Route path="/login" element={<LoginPage />} />
