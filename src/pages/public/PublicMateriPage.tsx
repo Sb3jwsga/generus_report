@@ -39,14 +39,14 @@ export default function PublicMateriPage() {
 
   const kategoriOptions = kategoris.map((k) => ({ value: k, label: k }));
 
-  const grouped = rombelList
-    .map((rombel) => ({
-      rombel,
+  const grouped = kategoris
+    .map((kategori) => ({
+      kategori,
       semesters: SEMESTER_LIST
         .map((semester) => ({
           semester,
           items: filtered
-            .filter((m) => m.id_rombel === rombel.id_rombel && m.semester === semester)
+            .filter((m) => m.kategori_materi === kategori && m.semester === semester)
             .sort((a, b) => a.nama_materi.localeCompare(b.nama_materi)),
         }))
         .filter((semester) => semester.items.length > 0),
@@ -152,16 +152,16 @@ export default function PublicMateriPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {grouped.map(({ rombel, semesters }) => (
-            <section key={rombel.id_rombel} aria-labelledby={`rombel-${rombel.id_rombel}`}>
+          {grouped.map(({ kategori, semesters }) => (
+            <section key={kategori} aria-labelledby={`kategori-${kategori}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
-                  <Icon name="school" size={22} />
+                  <Icon name={kategoriIcon(kategori)} size={22} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Rombel</p>
-                  <h2 id={`rombel-${rombel.id_rombel}`} className="text-xl font-extrabold text-gray-900">
-                    {rombel.nama_rombel}
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Kategori</p>
+                  <h2 id={`kategori-${kategori}`} className="text-xl font-extrabold text-gray-900">
+                    {kategori}
                   </h2>
                 </div>
                 <span className="ml-auto rounded-full bg-primary-container/10 px-3 py-1 text-xs font-bold text-primary">
@@ -185,7 +185,7 @@ export default function PublicMateriPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                              {m.kategori_materi}
+                              {m.rombel?.nama_rombel || 'Tanpa Rombel'}
                             </p>
                             <h4 className="font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors">
                               {m.nama_materi}
