@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Icon } from '../../components/ui/Icon';
+import { SEMESTER_LIST } from '../../utils/constants';
 
 export default function MateriPage() {
   const [data, setData] = useState<any[]>([]);
@@ -20,10 +21,10 @@ export default function MateriPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
-  const [form, setForm] = useState({ nama_materi: '', kategori_materi: '', id_rombel: '' });
+  const [form, setForm] = useState({ nama_materi: '', kategori_materi: '', semester: '', id_rombel: '' });
 
   const resetForm = () => {
-    setForm({ nama_materi: '', kategori_materi: '', id_rombel: '' });
+    setForm({ nama_materi: '', kategori_materi: '', semester: '', id_rombel: '' });
     setEditingId(null);
     setFormError('');
   };
@@ -35,7 +36,7 @@ export default function MateriPage() {
 
   const openEdit = (m: any) => {
     setEditingId(m.id_materi);
-    setForm({ nama_materi: m.nama_materi, kategori_materi: m.kategori_materi, id_rombel: m.id_rombel || '' });
+    setForm({ nama_materi: m.nama_materi, kategori_materi: m.kategori_materi, semester: m.semester || '', id_rombel: m.id_rombel || '' });
     setFormError('');
     setShowModal(true);
   };
@@ -51,7 +52,7 @@ export default function MateriPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleCreate = async () => {
-    if (!form.nama_materi || !form.kategori_materi || !form.id_rombel) return;
+    if (!form.nama_materi || !form.kategori_materi || !form.semester || !form.id_rombel) return;
     setSaving(true);
     setFormError('');
     let error = null;
@@ -73,6 +74,7 @@ export default function MateriPage() {
   };
 
   const rombelOptions = rombelList.map((r) => ({ value: r.id_rombel, label: r.nama_rombel }));
+  const semesterOptions = SEMESTER_LIST.map((s) => ({ value: s, label: s }));
 
   const filtered = data.filter((m) =>
     m.nama_materi.toLowerCase().includes(search.toLowerCase()) ||
@@ -150,6 +152,7 @@ export default function MateriPage() {
                     <div className="min-w-0">
                       <p className="text-[11px] text-primary font-bold uppercase">{m.kategori_materi}</p>
                       <h3 className="font-bold text-gray-900 leading-snug">{m.nama_materi}</h3>
+                      <p className="text-xs text-gray-500 mt-1">Semester {m.semester || '-'}</p>
                     </div>
                   </div>
                 </div>
@@ -163,6 +166,10 @@ export default function MateriPage() {
         <div className="space-y-4">
           <Input label="Nama Materi" value={form.nama_materi} onChange={(e) => setForm({ ...form, nama_materi: e.target.value })} placeholder="Judul modul" />
           <Input label="Kategori" value={form.kategori_materi} onChange={(e) => setForm({ ...form, kategori_materi: e.target.value })} placeholder="Misal: Al-Qur'an, Hadist" />
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Semester</label>
+            <Combobox options={semesterOptions} value={form.semester} onChange={(val) => setForm({ ...form, semester: val })} placeholder="Pilih Semester" />
+          </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Rombel</label>
             <Combobox options={rombelOptions} value={form.id_rombel} onChange={(val) => setForm({ ...form, id_rombel: val })} placeholder="Pilih Rombel" />

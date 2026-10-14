@@ -123,6 +123,7 @@ CREATE TABLE generus.materi (
   id_materi TEXT PRIMARY KEY DEFAULT generus.nanoid(),
   nama_materi VARCHAR(150) NOT NULL,
   kategori_materi VARCHAR(100) NOT NULL,
+  semester VARCHAR(20) NOT NULL,
   id_rombel TEXT REFERENCES generus.rombel(id_rombel) ON DELETE CASCADE
 );
 

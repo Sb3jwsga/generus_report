@@ -103,6 +103,7 @@ export interface Materi {
   id_materi: string;
   nama_materi: string;
   kategori_materi: string;
+  semester: string;
   id_rombel: string | null;
 }
 
