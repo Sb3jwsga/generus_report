@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Icon } from '../../components/ui/Icon';
 import { SEMESTER_LIST } from '../../utils/constants';
+import * as XLSX from 'xlsx';
 
 export default function MateriPage() {
   const [data, setData] = useState<any[]>([]);
@@ -19,6 +20,10 @@ export default function MateriPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadRombelId, setUploadRombelId] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({ nama_materi: '', kategori_materi: '', semester: '', id_rombel: '' });
@@ -73,6 +78,102 @@ export default function MateriPage() {
     fetchData();
   };
 
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        'Semester': 'Ganjil',
+        'Kategori': "Al-Qur'an",
+        'Nama Materi': 'Tajwid Dasar'
+      },
+      {
+        'Semester': 'Genap',
+        'Kategori': 'Hadist',
+        'Nama Materi': 'Hadist Pilihan'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'template_materi.xlsx');
+  };
+
+  const handleUploadExcel = async () => {
+    if (!uploadRombelId || !uploadFile) {
+      setUploadError('Pilih Rombel dan File Excel terlebih dahulu.');
+      return;
+    }
+
+    setSaving(true);
+    setUploadError('');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const bstr = e.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const rawData: any[] = XLSX.utils.sheet_to_json(ws);
+
+        if (rawData.length === 0) {
+          setUploadError('File Excel kosong.');
+          setSaving(false);
+          return;
+        }
+
+        const validatedData: any[] = [];
+        const errors: string[] = [];
+
+        rawData.forEach((row, index) => {
+          const rowNum = index + 2;
+          const semester = row['Semester'];
+          const kategori = row['Kategori'];
+          const nama = row['Nama Materi'];
+
+          if (!semester || !kategori || !nama) {
+            errors.push(`Baris ${rowNum}: Data tidak lengkap (Semester, Kategori, atau Nama Materi kosong).`);
+            return;
+          }
+
+          if (!SEMESTER_LIST.includes(semester)) {
+            errors.push(`Baris ${rowNum}: Semester "${semester}" tidak valid.`);
+            return;
+          }
+
+          validatedData.push({
+            semester,
+            kategori_materi: kategori,
+            nama_materi: nama,
+            id_rombel: uploadRombelId,
+          });
+        });
+
+        if (errors.length > 0) {
+          setUploadError(errors.slice(0, 5).join('\n') + (errors.length > 5 ? `\n...dan ${errors.length - 5} error lainnya.` : ''));
+          setSaving(false);
+          return;
+        }
+
+        const { error } = await supabase.from('materi').insert(validatedData);
+        
+        if (error) {
+          setUploadError(`Gagal simpan ke database: ${error.message}`);
+        } else {
+          setShowUploadModal(false);
+          setUploadFile(null);
+          setUploadRombelId('');
+          fetchData();
+        }
+        setSaving(false);
+      };
+      reader.readAsBinaryString(uploadFile);
+    } catch (err: any) {
+      setUploadError(`Gagal membaca file: ${err.message}`);
+      setSaving(false);
+    }
+  };
+
   const rombelOptions = rombelList.map((r) => ({ value: r.id_rombel, label: r.nama_rombel }));
   const semesterOptions = SEMESTER_LIST.map((s) => ({ value: s, label: s }));
 
@@ -88,9 +189,14 @@ export default function MateriPage() {
         title="Materi Pembelajaran"
         description={`${data.length} modul pembelajaran tersedia.`}
         action={
-          <Button onClick={openCreate}>
-            <Icon name="add" size={18} /> Tambah Materi
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowUploadModal(true)}>
+              <Icon name="upload" size={18} /> Upload Excel
+            </Button>
+            <Button onClick={openCreate}>
+              <Icon name="add" size={18} /> Tambah Materi
+            </Button>
+          </div>
         }
       />
 
@@ -161,6 +267,40 @@ export default function MateriPage() {
           </div>
         )}
       </div>
+
+      <Modal isOpen={showUploadModal} onClose={() => { setShowUploadModal(false); setUploadError(''); }} title="Upload Materi via Excel" icon="upload">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Pilih Rombel</label>
+            <Combobox options={rombelOptions} value={uploadRombelId} onChange={setUploadRombelId} placeholder="Pilih Rombel" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">File Excel</label>
+            <div className="flex flex-col gap-2">
+              <input type="file" accept=".xlsx, .xls" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90" />
+              <button 
+                type="button" 
+                onClick={downloadTemplate}
+                className="text-primary text-xs font-bold flex items-center gap-1 hover:underline w-fit"
+              >
+                <Icon name="download" size={14} /> Download Template Excel
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Format kolom: Semester, Kategori, Nama Materi</p>
+          </div>
+          {uploadError && (
+            <div className="p-3 bg-error-container/50 text-error text-xs rounded-lg font-medium whitespace-pre-line">
+              {uploadError}
+            </div>
+          )}
+        </div>
+        <div className="mt-5 flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => setShowUploadModal(false)}>Batal</Button>
+          <Button onClick={handleUploadExcel} disabled={saving}>
+            {saving ? 'Mengunggah...' : 'Upload'}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title={editingId ? 'Edit Materi' : 'Tambah Materi'} subtitle={editingId ? 'Perbarui modul pembelajaran' : 'Modul pembelajaran baru'} icon="menu_book">
         <div className="space-y-4">
