@@ -4,6 +4,7 @@ import { PublicLayout } from '../../components/layout/PublicLayout';
 import { Spinner } from '../../components/ui/Spinner';
 import { Combobox } from '../../components/ui/Combobox';
 import { Icon } from '../../components/ui/Icon';
+import { Modal } from '../../components/ui/Modal';
 import { BULAN_LIST } from '../../utils/constants';
 
 export default function PublicCapaianPage() {
@@ -16,6 +17,10 @@ export default function PublicCapaianPage() {
   const [filterKelompok, setFilterKelompok] = useState('');
   const [filterDesa, setFilterDesa] = useState('');
 
+  // Detail Modal State
+  const [selectedLaporan, setSelectedLaporan] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       const { data: d } = await supabase.from('laporan_bulanan').select(`
@@ -25,7 +30,7 @@ export default function PublicCapaianPage() {
           jumlah_capaian,
           target_bulanan(nama_target, jumlah_target, satuan_target, bulan_target)
         ),
-        catatan(category_catatan(nama_category))
+        catatan(catatan, category_catatan(nama_category))
       `);
       setData(d || []);
       setLoading(false);
@@ -39,7 +44,7 @@ export default function PublicCapaianPage() {
   const desaOptions = [...new Set(data.map((l) => l.generus?.kelompok?.desa?.nama_desa).filter(Boolean))].map((d) => ({ value: d, label: d }));
 
   const filtered = data.filter((l) => {
-    const matchSearch = l.generus?.nama_generus.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = (l.generus?.nama_generus || '').toLowerCase().includes(search.toLowerCase());
     const matchBulan = !filterBulan || l.detail_laporan_bulanan?.some((d: any) =>
       d.target_bulanan?.bulan_target === filterBulan
     );
@@ -81,31 +86,9 @@ export default function PublicCapaianPage() {
 
   const bulanOptions = BULAN_LIST.map((b) => ({ value: b, label: b }));
 
-  const targetColumns: { nama: string; target: number; satuan: string }[] = [];
-  const seenTargets = new Set<string>();
-  filtered.forEach((l) => {
-    (l.detail_laporan_bulanan || []).forEach((d: any) => {
-      const nama = d.target_bulanan?.nama_target || 'Tanpa Nama';
-      if (!seenTargets.has(nama)) {
-        seenTargets.add(nama);
-        targetColumns.push({
-          nama,
-          target: Number(d.target_bulanan?.jumlah_target || 0),
-          satuan: d.target_bulanan?.satuan_target || '',
-        });
-      }
-    });
-  });
-
-  const renderTargetCell = (l: any, targetName: string) => {
-    const detail = (l.detail_laporan_bulanan || []).find((d: any) => d.target_bulanan?.nama_target === targetName);
-    if (!detail) return <span className="text-gray-300">-</span>;
-    return (
-      <span>
-        <span className="font-bold text-gray-900">{detail.jumlah_capaian}</span>
-        <span className="text-gray-400"> / {detail.target_bulanan?.jumlah_target} {detail.target_bulanan?.satuan_target}</span>
-      </span>
-    );
+  const openDetail = (l: any) => {
+    setSelectedLaporan(l);
+    setIsModalOpen(true);
   };
 
   if (loading) {
@@ -186,25 +169,17 @@ export default function PublicCapaianPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <table className="min-w-full divide-y divide-gray-100 text-sm border-separate border-spacing-0">
-              <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider sticky top-0 z-20">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-100 text-sm">
+              <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
-                  <th className="px-4 py-3 text-left sticky left-0 bg-gray-50 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">No</th>
-                  <th className="px-4 py-3 text-left sticky left-[52px] bg-gray-50 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nama Generus</th>
-                  <th className="px-4 py-3 text-left">Rombel</th>
+                  <th className="px-4 py-3 text-left">No</th>
+                  <th className="px-4 py-3 text-left">Nama Generus</th>
                   <th className="px-4 py-3 text-left">Kelompok</th>
-                  <th className="px-4 py-3 text-left">Desa</th>
-                  <th className="px-4 py-3 text-center">Kehadiran (H/I/S/A)</th>
-                  <th className="px-4 py-3 text-center">% Kehadiran</th>
-                  {targetColumns.map((t) => (
-                    <th key={t.nama} className="px-4 py-3 text-center min-w-[130px]">
-                      <span className="block">{t.nama}</span>
-                      <span className="normal-case font-medium text-[10px]">(Target {t.target} {t.satuan})</span>
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-center">% Capaian</th>
-                  <th className="px-4 py-3 text-center">Catatan</th>
+                  <th className="px-4 py-3 text-left">Rombel</th>
+                  <th className="px-4 py-3 text-center">Persentase Kehadiran</th>
+                  <th className="px-4 py-3 text-center">Persentase Pencapaian</th>
+                  <th className="px-4 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -222,28 +197,31 @@ export default function PublicCapaianPage() {
                   const pctTarget = totalTarget > 0 ? Math.round((totalCapaian / totalTarget) * 100) : 0;
 
                   return (
-                    <tr key={l.id_laporan} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3.5 text-gray-400 font-bold sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{idx + 1}</td>
-                      <td className="px-4 py-3.5 sticky left-[52px] bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    <tr
+                      key={l.id_laporan}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer group/row"
+                      onClick={() => openDetail(l)}
+                    >
+                      <td className="px-4 py-3.5 text-gray-400 font-bold">{idx + 1}</td>
+                      <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-xs shrink-0">
                             {l.generus?.nama_generus?.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-bold text-gray-900 block leading-tight">{l.generus?.nama_generus}</span>
+                            <span className="font-bold text-gray-900 block leading-tight group-hover/row:text-primary transition-colors">{l.generus?.nama_generus}</span>
                             <span className="text-[11px] text-gray-400">{l.generus?.jenis_kelamin}</span>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-gray-600">
+                        <div>{l.generus?.kelompok?.nama_kelompok || '-'}</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-tighter">{l.generus?.kelompok?.desa?.nama_desa}</div>
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
                           {l.generus?.rombel?.nama_rombel || '-'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-gray-600">{l.generus?.kelompok?.nama_kelompok || '-'}</td>
-                      <td className="px-4 py-3.5 text-xs text-gray-600">{l.generus?.kelompok?.desa?.nama_desa || '-'}</td>
-                      <td className="px-4 py-3.5 text-center text-xs text-gray-600">
-                        <span className="font-semibold text-primary">{hadir}</span> / <span>{izin}</span> / <span>{sakit}</span> / <span className="text-error">{alfa}</span>
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -252,11 +230,6 @@ export default function PublicCapaianPage() {
                           {pctHadir}%
                         </span>
                       </td>
-                      {targetColumns.map((t) => (
-                        <td key={t.nama} className="px-4 py-3.5 text-center text-xs">
-                          {renderTargetCell(l, t.nama)}
-                        </td>
-                      ))}
                       <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                           pctTarget >= 85 ? 'bg-secondary-container text-gray-900' : pctTarget >= 60 ? 'bg-blue-50 text-primary' : 'bg-gray-100 text-gray-700'
@@ -264,12 +237,13 @@ export default function PublicCapaianPage() {
                           {pctTarget}%
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-gray-600 max-w-[200px]">
-                        {(l.catatan?.category_catatan?.nama_category) ? (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                            {l.catatan.category_catatan.nama_category}
-                          </span>
-                        ) : '-'}
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          onClick={() => openDetail(l)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors shadow-sm"
+                        >
+                          <Icon name="visibility" size={16} /> Detail
+                        </button>
                       </td>
                     </tr>
                   );
@@ -279,6 +253,122 @@ export default function PublicCapaianPage() {
           </div>
         </div>
       )}
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Detail Capaian Generus"
+        subtitle={selectedLaporan?.generus?.nama_generus}
+        icon="assessment"
+        size="lg"
+      >
+        {selectedLaporan && (
+          <div className="space-y-6">
+            {/* Kehadiran */}
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Icon name="calendar_month" size={16} className="text-primary" />
+                Ringkasan Kehadiran
+              </h4>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="text-center p-2 rounded-lg bg-white shadow-sm border border-gray-100">
+                  <p className="text-[10px] text-gray-500 uppercase">Hadir</p>
+                  <p className="text-lg font-bold text-green-600">{selectedLaporan.jumlah_hadir || 0}</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-white shadow-sm border border-gray-100">
+                  <p className="text-[10px] text-gray-500 uppercase">Izin</p>
+                  <p className="text-lg font-bold text-blue-600">{selectedLaporan.jumlah_izin || 0}</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-white shadow-sm border border-gray-100">
+                  <p className="text-[10px] text-gray-500 uppercase">Sakit</p>
+                  <p className="text-lg font-bold text-yellow-600">{selectedLaporan.jumlah_sakit || 0}</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-white shadow-sm border border-gray-100">
+                  <p className="text-[10px] text-gray-500 uppercase">Alfa</p>
+                  <p className="text-lg font-bold text-red-600">{selectedLaporan.jumlah_alfa || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Capaian Target */}
+            <div>
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Icon name="flag" size={16} className="text-primary" />
+                Capaian Target Bulanan
+              </h4>
+              <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-100 text-xs">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-bold text-gray-500 uppercase">Target</th>
+                      <th className="px-4 py-2 text-center font-bold text-gray-500 uppercase">Capaian</th>
+                      <th className="px-4 py-2 text-center font-bold text-gray-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(selectedLaporan.detail_laporan_bulanan || []).map((d: any, i: number) => {
+                      const cap = Number(d.jumlah_capaian || 0);
+                      const tar = Number(d.target_bulanan?.jumlah_target || 0);
+                      const pct = tar > 0 ? Math.round((cap / tar) * 100) : 0;
+                      return (
+                        <tr key={i}>
+                          <td className="px-4 py-3">
+                            <p className="font-bold text-gray-900">{d.target_bulanan?.nama_target}</p>
+                            <p className="text-[10px] text-gray-400">Bulan: {d.target_bulanan?.bulan_target}</p>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="font-bold text-gray-900">{cap}</span>
+                            <span className="text-gray-400"> / {tar} {d.target_bulanan?.satuan_target}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              pct >= 100 ? 'bg-green-100 text-green-700' : pct > 0 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {pct}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Catatan */}
+            <div className="bg-primary-container/5 rounded-xl p-4 border border-primary-container/20">
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <Icon name="comment" size={16} className="text-primary" />
+                Catatan Perkembangan
+              </h4>
+              {selectedLaporan.catatan ? (
+                <div className="space-y-2">
+                  {selectedLaporan.catatan.category_catatan && (
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container text-gray-900 uppercase">
+                      {selectedLaporan.catatan.category_catatan.nama_category}
+                    </span>
+                  )}
+                  <p className="text-sm text-gray-700 italic leading-relaxed">
+                    "{selectedLaporan.catatan.catatan || 'Tidak ada isi catatan.'}"
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">Tidak ada catatan.</p>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-bold hover:bg-gray-200 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </PublicLayout>
   );
 }

@@ -73,26 +73,41 @@ export default function PublicTargetPage() {
           <p className="text-sm text-gray-500 mt-1">Pilih rombel lain atau coba lagi nanti.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {targetsByBulan.map(({ bulan, targets: bulanTargets }) => (
-            <section key={bulan}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center"><Icon name="calendar_month" size={21} /></div>
-                <div><h2 className="font-extrabold text-gray-900">{bulan}</h2><p className="text-xs text-gray-500">{bulanTargets.length} target capaian</p></div>
+            <div key={bulan} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+              <div className="bg-gray-50/50 px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center">
+                    <Icon name="calendar_month" size={20} />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-gray-900 leading-none">{bulan}</h2>
+                    <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider font-semibold">{bulanTargets.length} Target</p>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              <div className="p-5 space-y-4 flex-1">
                 {bulanTargets.map((target) => (
-                  <article key={target.id_target_bulan} className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-primary-container/10 text-primary flex items-center justify-center shrink-0"><Icon name="flag" size={22} /></div>
-                      <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-[11px] font-bold">{target.rombel?.nama_rombel || 'Umum'}</span>
+                  <div key={target.id_target_bulan} className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group">
+                    <div className="w-10 h-10 rounded-lg bg-primary-container/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Icon name="flag" size={20} />
                     </div>
-                    <h3 className="font-bold text-gray-900 mt-4">{target.nama_target}</h3>
-                    <p className="text-sm text-gray-500 mt-1">Target: <span className="font-bold text-primary">{target.jumlah_target} {target.satuan_target}</span></p>
-                  </article>
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-flex px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-bold mb-1.5">
+                        {target.rombel?.nama_rombel || 'Umum'}
+                      </span>
+                      <h3 className="font-bold text-gray-900 text-sm leading-tight">{target.nama_target}</h3>
+                      <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                        <span>Target:</span>
+                        <span className="font-bold text-primary">{target.jumlah_target} {target.satuan_target}</span>
+                      </p>
+                    </div>
+                  </div>
                 ))}
               </div>
-            </section>
+            </div>
           ))}
         </div>
       )}

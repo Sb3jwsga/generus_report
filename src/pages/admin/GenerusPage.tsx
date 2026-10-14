@@ -96,7 +96,7 @@ export default function GenerusPage() {
     setSaving(true);
     setFormError('');
     const payload = {
-      nama_generus: form.nama_generus.trim(),
+      nama_generus: form.nama_generus.trim().toUpperCase(),
       jenis_kelamin: form.jenis_kelamin,
       tanggal_lahir: form.tanggal_lahir,
       id_kelompok: form.id_kelompok,
@@ -318,8 +318,9 @@ export default function GenerusPage() {
           <Input
             label="Nama Lengkap"
             value={form.nama_generus}
-            onChange={(e) => setForm({ ...form, nama_generus: e.target.value })}
+            onChange={(e) => setForm({ ...form, nama_generus: e.target.value.toUpperCase() })}
             placeholder="Nama lengkap generus"
+            className="uppercase"
           />
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Jenis Kelamin</label>

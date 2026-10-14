@@ -263,7 +263,7 @@ export default function FormLaporanBulananPage() {
                   <div key={t.id_target_bulan} className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-400">TARGET {i + 1}</p>
-                      <p className="font-bold text-gray-900 truncate">{t.nama_target}</p>
+                      <p className="font-bold text-gray-900">{t.nama_target}</p>
                       <p className="text-xs text-gray-500 mt-0.5">Target: {t.jumlah_target} {t.satuan_target}</p>
                     </div>
                     <div className="w-28 shrink-0">
