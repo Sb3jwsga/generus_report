@@ -5,6 +5,7 @@ import { PublicLayout } from '../../components/layout/PublicLayout';
 import { Spinner } from '../../components/ui/Spinner';
 import { Combobox } from '../../components/ui/Combobox';
 import { Icon } from '../../components/ui/Icon';
+import { SEMESTER_LIST } from '../../utils/constants';
 
 export default function PublicMateriPage() {
   const [data, setData] = useState<any[]>([]);
@@ -18,7 +19,7 @@ export default function PublicMateriPage() {
     const fetchData = async () => {
       const [m, r] = await Promise.all([
         supabase.from('materi').select('*, rombel(nama_rombel)'),
-        supabase.from('rombel').select('*'),
+        supabase.from('rombel').select('*').order('nama_rombel'),
       ]);
       setData(m.data || []);
       setRombelList(r.data || []);
@@ -37,6 +38,20 @@ export default function PublicMateriPage() {
   });
 
   const kategoriOptions = kategoris.map((k) => ({ value: k, label: k }));
+
+  const grouped = rombelList
+    .map((rombel) => ({
+      rombel,
+      semesters: SEMESTER_LIST
+        .map((semester) => ({
+          semester,
+          items: filtered
+            .filter((m) => m.id_rombel === rombel.id_rombel && m.semester === semester)
+            .sort((a, b) => a.nama_materi.localeCompare(b.nama_materi)),
+        }))
+        .filter((semester) => semester.items.length > 0),
+    }))
+    .filter((group) => group.semesters.length > 0);
 
   const kategoriIcon = (kat: string) => {
     const lower = kat.toLowerCase();
@@ -136,29 +151,53 @@ export default function PublicMateriPage() {
           <p className="text-sm text-gray-500 mt-1">Coba ubah filter atau kata kunci pencarian</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((m) => (
-            <div key={m.id_materi} className="flex flex-col bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden border border-gray-100 group">
-              <div className="w-1.5 h-full bg-primary absolute left-0 top-0 bottom-0" />
-              <div className="pl-2">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <span className="inline-flex px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-[11px] font-bold">
-                    {m.rombel?.nama_rombel || 'Umum'}
-                  </span>
+        <div className="space-y-8">
+          {grouped.map(({ rombel, semesters }) => (
+            <section key={rombel.id_rombel} aria-labelledby={`rombel-${rombel.id_rombel}`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
+                  <Icon name="school" size={22} />
                 </div>
-                <div className="flex gap-3 mb-2">
-                  <div className="w-12 h-12 rounded-xl bg-primary-container/10 text-primary flex items-center justify-center shrink-0">
-                    <Icon name={kategoriIcon(m.kategori_materi)} size={24} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-primary font-semibold uppercase">{m.kategori_materi}</p>
-                    <h2 className="font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors line-clamp-2">
-                      {m.nama_materi}
-                    </h2>
-                  </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Rombel</p>
+                  <h2 id={`rombel-${rombel.id_rombel}`} className="text-xl font-extrabold text-gray-900">
+                    {rombel.nama_rombel}
+                  </h2>
                 </div>
+                <span className="ml-auto rounded-full bg-primary-container/10 px-3 py-1 text-xs font-bold text-primary">
+                  {semesters.reduce((total, semester) => total + semester.items.length, 0)} materi
+                </span>
               </div>
-            </div>
+
+              <div className="space-y-5 pl-0 lg:pl-[52px]">
+                {semesters.map(({ semester, items }) => (
+                  <div key={semester} className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 lg:p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Icon name="calendar_month" size={20} className="text-primary" />
+                      <h3 className="font-bold text-gray-900">Semester {semester}</h3>
+                      <span className="text-xs text-gray-500">({items.length})</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {items.map((m) => (
+                        <article key={m.id_materi} className="flex gap-3 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100 group">
+                          <div className="w-10 h-10 rounded-lg bg-primary-container/10 text-primary flex items-center justify-center shrink-0">
+                            <Icon name={kategoriIcon(m.kategori_materi)} size={21} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                              {m.kategori_materi}
+                            </p>
+                            <h4 className="font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors">
+                              {m.nama_materi}
+                            </h4>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
