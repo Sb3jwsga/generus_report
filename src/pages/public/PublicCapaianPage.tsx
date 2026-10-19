@@ -40,8 +40,13 @@ export default function PublicCapaianPage() {
 
   const tahunOptions = [...new Set(data.map((l) => (l.tanggal_laporan || '').slice(0, 4)).filter(Boolean))].sort().reverse().map((t) => ({ value: t, label: t }));
   const rombelOptions = [...new Set(data.map((l) => l.generus?.rombel?.nama_rombel).filter(Boolean))].map((r) => ({ value: r, label: r }));
-  const kelompokOptions = [...new Set(data.map((l) => l.generus?.kelompok?.nama_kelompok).filter(Boolean))].map((k) => ({ value: k, label: k }));
   const desaOptions = [...new Set(data.map((l) => l.generus?.kelompok?.desa?.nama_desa).filter(Boolean))].map((d) => ({ value: d, label: d }));
+  const kelompokOptions = [...new Set(
+    data
+      .filter((l) => !filterDesa || l.generus?.kelompok?.desa?.nama_desa === filterDesa)
+      .map((l) => l.generus?.kelompok?.nama_kelompok)
+      .filter(Boolean)
+  )].map((k) => ({ value: k, label: k }));
 
   const filtered = data.filter((l) => {
     const matchSearch = (l.generus?.nama_generus || '').toLowerCase().includes(search.toLowerCase());
@@ -151,9 +156,17 @@ export default function PublicCapaianPage() {
           </div>
           <Combobox options={bulanOptions} value={filterBulan} onChange={setFilterBulan} placeholder="Filter Bulan" />
           <Combobox options={tahunOptions} value={filterTahun} onChange={setFilterTahun} placeholder="Filter Tahun" />
-          <Combobox options={rombelOptions} value={filterRombel} onChange={setFilterRombel} placeholder="Filter Rombel" />
+          <Combobox
+            options={desaOptions}
+            value={filterDesa}
+            onChange={(desa) => {
+              setFilterDesa(desa);
+              setFilterKelompok('');
+            }}
+            placeholder="Filter Desa"
+          />
           <Combobox options={kelompokOptions} value={filterKelompok} onChange={setFilterKelompok} placeholder="Filter Kelompok" />
-          <Combobox options={desaOptions} value={filterDesa} onChange={setFilterDesa} placeholder="Filter Desa" />
+          <Combobox options={rombelOptions} value={filterRombel} onChange={setFilterRombel} placeholder="Filter Rombel" />
         </div>
       </div>
 
@@ -168,10 +181,10 @@ export default function PublicCapaianPage() {
           <p className="text-sm text-gray-500 mt-1">Coba ubah filter bulan atau kata kunci</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="overflow-auto max-h-[70vh] lg:overflow-visible lg:max-h-none">
             <table className="min-w-full divide-y divide-gray-100 text-sm">
-              <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <thead className="sticky top-0 lg:top-[7.5rem] z-30 bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-left">No</th>
                   <th className="px-4 py-3 text-left">Nama Generus</th>
