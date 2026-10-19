@@ -39,10 +39,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           </nav>
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             <Icon name="login" size={18} />
-            <span className="hidden sm:inline">Masuk Sistem</span>
+            <span>Masuk</span>
           </Link>
         </div>
       </header>

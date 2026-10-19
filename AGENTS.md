@@ -38,6 +38,8 @@ Tidak ada test dan tidak ada CI. Jangan pakai `npm run tailwind`: script itu han
 - Admin: CRUD di dalam modal pada satu halaman. Pengurus: CRUD lewat route form terpisah dan wajib meround-trip filter/search/sort via URL query param.
 - Filename duplikat memang disengaja: `admin/GenerusPage.tsx`, `pengurus/GenerusPage.tsx`, `public/PublicGenerusPage.tsx`.
 - Filter admin mengikuti cascade Desa → Kelompok → Rombel. Urut bulan pakai `BULAN_LIST` (`src/utils/constants.ts`) karena urutan alfabetis salah. Nama generus UPPERCASE (dipaksa saat input dan saat simpan).
+- Materi publik: grouping hierarkis Kategori → Semester → List Materi.
+- Dashboard: Grafik batang dibuat manual (CSS bars) tanpa library chart. Filter tahun di-derive dari data `tanggal_laporan`.
 
 ## Verifikasi
 1. `npm run build` harus lolos — `noUnusedLocals`, `noUnusedParameters`, dan `verbatimModuleSyntax` aktif (buang variabel mati, pakai `import type`).
