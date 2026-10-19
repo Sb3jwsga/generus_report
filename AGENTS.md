@@ -41,6 +41,7 @@ Tidak ada test dan tidak ada CI. Jangan pakai `npm run tailwind`: script itu han
 - Filter admin mengikuti cascade Desa → Kelompok → Rombel. Urut bulan pakai `BULAN_LIST` (`src/utils/constants.ts`) karena urutan alfabetis salah. Nama generus UPPERCASE (dipaksa saat input dan saat simpan).
 - Materi publik: grouping hierarkis Kategori → Semester → List Materi.
 - Dashboard: Grafik batang dibuat manual (CSS bars) tanpa library chart. Filter tahun di-derive dari data `tanggal_laporan`.
+- Tabel Publik: Gunakan `sticky` header untuk freeze tabel saat scroll (top-0 atau top-7.5rem untuk desktop). Filter desa harus diletakkan sebelum kelompok.
 
 ## Verifikasi
 1. `npm run build` harus lolos — `noUnusedLocals`, `noUnusedParameters`, dan `verbatimModuleSyntax` aktif (buang variabel mati, pakai `import type`).
