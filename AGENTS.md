@@ -29,7 +29,8 @@ Tidak ada test dan tidak ada CI. Jangan pakai `npm run tailwind`: script itu han
 ## Wiring halaman baru
 1. `src/App.tsx`: route; route admin/pengurus dibungkus `ProtectedRoute allowedRoles={[...]}`. Catch-all `*` melempar ke `/login`.
 2. Nav: `PublicLayout.tsx` (`tabs`), atau `Sidebar.tsx` **dan** `BottomNav.tsx` (daftar mobile & desktop terpisah).
-3. Halaman publik juga butuh card di `src/pages/public/PublicPortal.tsx`.
+3. `/` memakai header mandiri di `src/pages/public/PublicPortal.tsx`; perubahan header `PublicLayout.tsx` tidak memengaruhi halaman utama.
+4. Halaman publik juga butuh card di `src/pages/public/PublicPortal.tsx`.
 
 ## Konvensi UI
 - Tailwind v4 via `@tailwindcss/vite`. Token warna ada di blok `@theme` `src/index.css`; `tailwind.config.js` legacy dan **tidak dibaca** — tambah warna di `@theme` atau warnanya tidak ada.
