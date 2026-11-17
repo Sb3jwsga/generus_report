@@ -42,6 +42,11 @@ Tidak ada test dan tidak ada CI. Jangan pakai `npm run tailwind`: script itu han
 - Materi publik: grouping hierarkis Kategori → Semester → List Materi.
 - Dashboard: Grafik batang dibuat manual (CSS bars) tanpa library chart. Filter tahun di-derive dari data `tanggal_laporan`.
 - Tabel Publik: Gunakan `sticky` header untuk freeze tabel saat scroll (top-0 atau top-7.5rem untuk desktop). Filter desa harus diletakkan sebelum kelompok.
+- Filter bulan laporan **selalu** dari `laporan_bulanan.tanggal_laporan`, bukan `target_bulanan.bulan_target` (bulan target ≠ bulan laporan).
+- Rentang bulan: `gte(tanggal_laporan,'YYYY-MM-01')` + `lt(tanggal_laporan,'YYYY-MM-berikutnya-01')`. Jangan pakai `lte(...,'-31')` — tanggal invalid untuk bulan <31 hari dan Postgres mengembalikan error (dulu tampil sebagai form kosong).
+- Tanggal hari ini: susun dari `getFullYear/getMonth/getDate` lokal. `toISOString()` UTC menggeser tanggal dekat tengah malam.
+- Route `/pengurus/laporan-bulanan/tambah` membaca query `generusId` (fallback `id`) sebagai **id generus**, bukan `id_laporan`. Kirim `laporan_bulanan.id_santri` saat tombol edit dari riwayat.
+- Jangan biarkan error Supabase di form laporan jadi silent; tampilkan ke `error` state.
 
 ## Verifikasi
 1. `npm run build` harus lolos — `noUnusedLocals`, `noUnusedParameters`, dan `verbatimModuleSyntax` aktif (buang variabel mati, pakai `import type`).
