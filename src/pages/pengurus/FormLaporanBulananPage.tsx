@@ -30,7 +30,10 @@ export default function FormLaporanBulananPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const currentMonth = BULAN_LIST[new Date().getMonth()];
+  const now = new Date();
+  const currentMonth = BULAN_LIST[now.getMonth()];
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const currentYearMonth = today.slice(0, 7);
 
   useEffect(() => {
     if (!user?.id_kelompok) return;
@@ -58,11 +61,13 @@ export default function FormLaporanBulananPage() {
         .then(async ({ data: targetData }) => {
           setTargets(targetData || []);
 
-          // 2. Check if already reported (any month, not just current)
+          // 2. Check if already reported for the current month only
           const { data: laporanData } = await supabase
             .from('laporan_bulanan')
             .select('id_laporan, tanggal_laporan, jumlah_hadir, jumlah_izin, jumlah_sakit, jumlah_alfa, id_catatan, catatan(id_catatan, id_category, catatan)')
             .eq('id_santri', selectedGenerusId)
+            .gte('tanggal_laporan', `${currentYearMonth}-01`)
+            .lte('tanggal_laporan', `${currentYearMonth}-31`)
             .maybeSingle();
 
           if (laporanData) {
@@ -157,7 +162,7 @@ export default function FormLaporanBulananPage() {
 
         const { data: laporan, error: errLaporan } = await supabase.from('laporan_bulanan').insert({
           id_santri: selectedGenerusId,
-          tanggal_laporan: new Date().toISOString().split('T')[0],
+          tanggal_laporan: today,
           jumlah_hadir: Number(kehadiran.jumlah_hadir) || 0,
           jumlah_izin: Number(kehadiran.jumlah_izin) || 0,
           jumlah_sakit: Number(kehadiran.jumlah_sakit) || 0,
