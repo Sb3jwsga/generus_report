@@ -48,11 +48,11 @@ export default function PublicCapaianPage() {
       .filter(Boolean)
   )].map((k) => ({ value: k, label: k }));
 
+  const bulanIndex = String(BULAN_LIST.indexOf(filterBulan) + 1).padStart(2, '0');
+
   const filtered = data.filter((l) => {
     const matchSearch = (l.generus?.nama_generus || '').toLowerCase().includes(search.toLowerCase());
-    const matchBulan = !filterBulan || l.detail_laporan_bulanan?.some((d: any) =>
-      d.target_bulanan?.bulan_target === filterBulan
-    );
+    const matchBulan = !filterBulan || (l.tanggal_laporan || '').slice(5, 7) === bulanIndex;
     const matchTahun = !filterTahun || (l.tanggal_laporan || '').startsWith(filterTahun);
     const matchRombel = !filterRombel || l.generus?.rombel?.nama_rombel === filterRombel;
     const matchKelompok = !filterKelompok || l.generus?.kelompok?.nama_kelompok === filterKelompok;

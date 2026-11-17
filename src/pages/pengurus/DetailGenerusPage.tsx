@@ -76,7 +76,7 @@ export default function DetailGenerusPage() {
                 <Icon name="edit" size={18} /> Edit Data
               </Link>
               <Link
-                to="/pengurus/laporan-bulanan/tambah"
+                to={`/pengurus/laporan-bulanan/tambah?generusId=${generus.id_generus}`}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90"
               >
                 <Icon name="post_add" size={18} /> Input Laporan

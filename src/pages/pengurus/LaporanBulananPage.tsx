@@ -82,13 +82,15 @@ export default function LaporanBulananPage() {
     return matchSearch && matchRombel;
   });
 
+  const now = new Date();
+  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   const filteredLaporan = laporanList.filter((l) => {
     const matchSearch = (l.generus?.nama_generus || '').toLowerCase().includes(search.toLowerCase());
     const matchRombel = !selectedRombel || l.generus?.rombel?.nama_rombel === selectedRombel;
-    return matchSearch && matchRombel;
+    const matchBulan = (l.tanggal_laporan || '').startsWith(currentYearMonth);
+    return matchSearch && matchRombel && matchBulan;
   });
-
-  const currentYearMonth = new Date().toISOString().slice(0, 7);
 
   const getLaporanBulanIni = (id_generus: string) => {
     return laporanList.find((l) => l.id_santri === id_generus && (l.tanggal_laporan || '').startsWith(currentYearMonth));
@@ -130,7 +132,7 @@ export default function LaporanBulananPage() {
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          Riwayat Laporan ({laporanList.length})
+          Riwayat Laporan ({filteredLaporan.length})
         </button>
       </div>
 
@@ -350,7 +352,7 @@ export default function LaporanBulananPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="inline-flex items-center gap-1">
                             <Link
-                              to={`/pengurus/laporan-bulanan/tambah?id=${l.id_laporan}&edit=true&${commonParams}`}
+                              to={`/pengurus/laporan-bulanan/tambah?generusId=${l.id_santri}&edit=true&${commonParams}`}
                               className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-container/10 transition-colors"
                               title="Edit"
                             >
@@ -384,7 +386,7 @@ export default function LaporanBulananPage() {
                         <p className="text-[10px] font-medium text-gray-500 uppercase">{l.generus?.rombel?.nama_rombel || '-'}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Link to={`/pengurus/laporan-bulanan/tambah?id=${l.id_laporan}&edit=true&${commonParams}`} className="p-2 text-gray-400 hover:text-primary"><Icon name="edit" size={18} /></Link>
+                        <Link to={`/pengurus/laporan-bulanan/tambah?generusId=${l.id_santri}&edit=true&${commonParams}`} className="p-2 text-gray-400 hover:text-primary"><Icon name="edit" size={18} /></Link>
                         <button onClick={() => handleDeleteLaporan(l.id_laporan)} className="p-2 text-gray-400 hover:text-error"><Icon name="delete" size={18} /></button>
                       </div>
                     </div>

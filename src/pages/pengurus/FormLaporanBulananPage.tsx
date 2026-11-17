@@ -34,6 +34,8 @@ export default function FormLaporanBulananPage() {
   const currentMonth = BULAN_LIST[now.getMonth()];
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const currentYearMonth = today.slice(0, 7);
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextYearMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
   useEffect(() => {
     if (!user?.id_kelompok) return;
@@ -62,13 +64,20 @@ export default function FormLaporanBulananPage() {
           setTargets(targetData || []);
 
           // 2. Check if already reported for the current month only
-          const { data: laporanData } = await supabase
+          const { data: laporanData, error: errLaporanBulan } = await supabase
             .from('laporan_bulanan')
             .select('id_laporan, tanggal_laporan, jumlah_hadir, jumlah_izin, jumlah_sakit, jumlah_alfa, id_catatan, catatan(id_catatan, id_category, catatan)')
             .eq('id_santri', selectedGenerusId)
             .gte('tanggal_laporan', `${currentYearMonth}-01`)
-            .lte('tanggal_laporan', `${currentYearMonth}-31`)
+            .lt('tanggal_laporan', `${nextYearMonth}-01`)
+            .order('tanggal_laporan', { ascending: false })
+            .limit(1)
             .maybeSingle();
+
+          if (errLaporanBulan) {
+            setError(`Gagal memuat laporan bulan ini: ${errLaporanBulan.message}`);
+            return;
+          }
 
           if (laporanData) {
             setExistingLaporanId(laporanData.id_laporan);
